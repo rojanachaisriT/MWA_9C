@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โครงการอุโมงค์ส่งน้ำ สาย 9C | การประปานครหลวง</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+  :root{
+    --deep:#003a5d; --deep2:#005b8c; --aqua:#0096c7; --aqua2:#00b4d8;
+    --light:#90e0ef; --mist:#caf0f8; --ink:#0a2540; --paper:#f4fbfe;
+    --seg:#ef476f; --hol:#ffd166; --oth:#06d6a0; --card:#ffffff;
+    --shadow:0 8px 30px rgba(0,75,120,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Sarabun","Tahoma",sans-serif;color:var(--ink);
+    background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+
+  /* ---------- HERO ---------- */
+  header{position:relative;overflow:hidden;color:#fff;
+    background:linear-gradient(160deg,var(--deep) 0%,var(--deep2) 45%,var(--aqua) 100%);
+    padding:64px 24px 120px}
+  .hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:2}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.3);padding:6px 16px;border-radius:999px;
+    font-size:.8rem;letter-spacing:.5px;backdrop-filter:blur(4px)}
+  header h1{font-size:clamp(1.8rem,4vw,3rem);margin:18px 0 8px;font-weight:800;line-height:1.15}
+  header p.sub{font-size:clamp(1rem,2vw,1.25rem);opacity:.92;max-width:680px}
+  .hero-spec{display:flex;flex-wrap:wrap;gap:14px;margin-top:26px}
+  .hero-spec .chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    padding:10px 16px;border-radius:12px;font-size:.85rem}
+  .hero-spec .chip b{display:block;font-size:1.35rem;font-weight:800}
+  /* waves */
+  .waves{position:absolute;bottom:-2px;left:0;width:100%;height:120px;z-index:1}
+  .waves use{animation:move 16s cubic-bezier(.55,.5,.45,.5) infinite}
+  .waves use:nth-child(1){animation-delay:-2s;animation-duration:9s;fill:rgba(202,240,248,.25)}
+  .waves use:nth-child(2){animation-delay:-3s;animation-duration:13s;fill:rgba(202,240,248,.4)}
+  .waves use:nth-child(3){animation-delay:-4s;animation-duration:11s;fill:rgba(244,251,254,.85)}
+  @keyframes move{0%{transform:translate3d(-90px,0,0)}100%{transform:translate3d(85px,0,0)}}
+
+  /* ---------- LAYOUT ---------- */
+  main{max-width:1100px;margin:-70px auto 60px;padding:0 24px;position:relative;z-index:3}
+  section{margin-bottom:46px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 18px}
+  .sec-head .ic{width:40px;height:40px;border-radius:11px;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--aqua),var(--aqua2));display:grid;place-items:center;
+    box-shadow:var(--shadow)}
+  .sec-head h2{font-size:1.4rem;font-weight:800;color:var(--deep)}
+  .sec-head small{display:block;font-weight:400;color:#5b7a8c;font-size:.85rem;margin-top:2px}
+
+  /* stat cards */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+  .stat{background:var(--card);border-radius:16px;padding:22px;box-shadow:var(--shadow);
+    border:1px solid #e3f1f8;position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;right:-20px;top:-20px;width:80px;height:80px;
+    border-radius:50%;background:radial-gradient(circle,var(--mist),transparent 70%)}
+  .stat .lbl{font-size:.82rem;color:#5b7a8c}
+  .stat .val{font-size:1.9rem;font-weight:800;color:var(--deep);margin-top:4px}
+  .stat .unit{font-size:.85rem;color:var(--aqua);font-weight:600}
+
+  /* TBM fleet */
+  .fleet{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+  .tbm{background:var(--card);border-radius:16px;padding:20px;box-shadow:var(--shadow);
+    border:1px solid #e3f1f8;border-top:4px solid var(--aqua)}
+  .tbm h3{font-size:1.15rem;color:var(--deep);display:flex;align-items:center;gap:8px}
+  .tbm .code{font-size:.8rem;color:#5b7a8c;margin:2px 0 12px}
+  .tbm .row{display:flex;justify-content:space-between;font-size:.85rem;padding:5px 0;
+    border-top:1px dashed #e0eef5}
+  .tbm .row span:first-child{color:#5b7a8c}
+  .tbm .note{margin-top:10px;font-size:.78rem;background:#fff4e6;color:#a85b00;
+    padding:7px 10px;border-radius:8px;border-left:3px solid var(--hol)}
+
+  /* table */
+  .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+    border:1px solid #e3f1f8;overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{padding:13px 16px;text-align:left}
+  thead th{background:linear-gradient(135deg,var(--deep),var(--deep2));color:#fff;
+    font-weight:600;font-size:.85rem;white-space:nowrap}
+  tbody tr{border-top:1px solid #eef6fa}
+  tbody tr:nth-child(even){background:#f7fcfe}
+  tbody tr:hover{background:var(--mist)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--deep)}
+  tfoot td{background:#eaf6fb;font-weight:800;color:var(--deep);border-top:2px solid var(--aqua)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:600;
+    background:var(--mist);color:var(--deep2)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .chartbox{background:var(--card);border-radius:16px;padding:20px;box-shadow:var(--shadow);
+    border:1px solid #e3f1f8}
+  .chartbox h3{font-size:1rem;color:var(--deep);margin-bottom:12px}
+  .chart-wrap{position:relative;height:300px}
+
+  /* events */
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .tab{padding:10px 18px;border-radius:999px;border:1px solid #cfe7f2;background:#fff;
+    cursor:pointer;font-size:.88rem;font-weight:600;color:var(--deep2);transition:.2s}
+  .tab:hover{border-color:var(--aqua)}
+  .tab.active{background:linear-gradient(135deg,var(--aqua),var(--aqua2));color:#fff;border-color:transparent;
+    box-shadow:0 4px 14px rgba(0,150,199,.4)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:.83rem}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:12px;height:12px;border-radius:4px;display:inline-block}
+  .ev-list{display:grid;gap:9px}
+  .ev{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:12px;
+    padding:11px 16px;box-shadow:0 3px 12px rgba(0,75,120,.06);border:1px solid #eef6fa;
+    border-left:5px solid var(--oth)}
+  .ev.seg{border-left-color:var(--seg)}
+  .ev.hol{border-left-color:var(--hol)}
+  .ev .name{flex:1;font-size:.9rem;font-weight:600;color:var(--ink)}
+  .ev .cat{font-size:.72rem;padding:2px 9px;border-radius:999px;font-weight:700}
+  .ev .cat.seg{background:#fde2e9;color:#c1123f}
+  .ev .cat.hol{background:#fff3cf;color:#9a7500}
+  .ev .cat.oth{background:#d8f7ec;color:#048a66}
+  .ev .date{font-size:.78rem;color:#5b7a8c;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .grp-title{font-weight:800;color:var(--deep);margin:18px 0 8px;font-size:.95rem;
+    display:flex;align-items:center;gap:8px}
+  .count-badge{background:var(--deep);color:#fff;border-radius:999px;padding:1px 9px;font-size:.74rem}
+  .ev-tools{display:flex;gap:8px;margin-bottom:12px}
+  .ev-group{margin-bottom:4px}
+  button.grp-title{cursor:pointer;width:100%;text-align:left;background:#f3fafd;border:1px solid #e3f1f8;
+    border-radius:10px;padding:9px 14px;margin:6px 0 8px;transition:.15s}
+  button.grp-title:hover{background:var(--mist);border-color:var(--aqua)}
+  .grp-title .chev{color:var(--aqua);font-size:.7rem;transition:transform .2s}
+  .ev-group.collapsed .chev{transform:rotate(-90deg)}
+  .ev-group.collapsed .ev-list{display:none}
+  .ev .hide-btn{background:none;border:none;color:#b0c4d0;cursor:pointer;font-size:1.1rem;line-height:1;
+    padding:0 4px;border-radius:6px}
+  .ev .hide-btn:hover{background:#fde2e9;color:var(--seg)}
+  .ev.hidden{display:none}
+
+  .note-box{background:#eaf6fb;border:1px solid #cfe7f2;border-radius:12px;padding:14px 18px;
+    font-size:.85rem;color:#3a5a6c;margin-top:14px}
+  .note-box b{color:var(--deep)}
+
+  footer{text-align:center;padding:30px 24px 50px;color:#5b7a8c;font-size:.82rem}
+  footer .wave-line{height:3px;background:linear-gradient(90deg,transparent,var(--aqua),transparent);
+    max-width:300px;margin:0 auto 18px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+
+  /* ---------- ERECTION PLAN (image overlay) ---------- */
+  .ep-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px;
+    background:var(--card);border:1px solid #e3f1f8;border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .ep-toolbar label{display:flex;flex-direction:column;font-size:.78rem;color:#5b7a8c;gap:4px;font-weight:600}
+  .ep-toolbar input,.ep-toolbar select{font-family:inherit;font-size:.9rem;padding:7px 10px;border:1px solid #cfe7f2;
+    border-radius:9px;color:var(--ink);background:#fff}
+  .ep-spacer{flex:1}
+  .ep-btn{font-family:inherit;font-size:.85rem;font-weight:600;padding:8px 14px;border-radius:9px;cursor:pointer;
+    border:1px solid #cfe7f2;background:#fff;color:var(--deep2);transition:.15s}
+  .ep-btn:hover{border-color:var(--aqua);background:var(--mist)}
+  .ep-btn.primary{background:linear-gradient(135deg,var(--aqua),var(--aqua2));color:#fff;border-color:transparent}
+  .ep-btn.primary:hover{filter:brightness(1.05)}
+  .ep-btn.danger{color:#c1123f;border-color:#f3c3cf}
+  .ep-btn.danger:hover{background:#fde2e9;border-color:var(--seg)}
+  .ep-btn.small{padding:5px 10px;font-size:.78rem}
+  .ep-legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:.85rem;color:var(--deep)}
+  .ep-sw{width:20px;height:20px;border-radius:5px;border:1px solid rgba(0,0,0,.1);display:inline-block}
+  .ep-meta{margin-left:auto;color:#5b7a8c;font-size:.82rem}
+  .ep-hint{font-size:.82rem;color:#3a5a6c;background:#eaf6fb;border:1px solid #cfe7f2;border-radius:10px;
+    padding:9px 13px;margin-bottom:10px;line-height:1.7}
+  .ep-hint b{color:var(--deep)}
+  .ep-rowsbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .ep-rowchip{padding:5px 12px;border-radius:999px;border:1px solid #cfe7f2;background:#fff;cursor:pointer;
+    font-size:.8rem;font-weight:600;color:var(--deep2)}
+  .ep-rowchip.active{background:linear-gradient(135deg,var(--aqua),var(--aqua2));color:#fff;border-color:transparent}
+  .ep-stage{position:relative;width:100%;user-select:none;border-radius:12px;overflow:hidden;
+    border:1px solid #cfe7f2;background:#dfeef5;line-height:0;touch-action:none}
+  .ep-stage img{width:100%;display:block;pointer-events:none}
+  .ep-ov{position:absolute;inset:0}
+  .ep-box{position:absolute;border:1px solid rgba(0,90,140,.85);background:rgba(255,255,255,.28);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-sizing:border-box;
+    overflow:hidden;transition:background .1s,box-shadow .1s}
+  .ep-box span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:8px;line-height:1;color:#13435c;
+    white-space:nowrap;font-weight:700;text-shadow:0 0 2px #fff,0 0 2px #fff}
+  .ep-box:hover{box-shadow:0 0 0 2px var(--aqua);z-index:6}
+  .ep-box.has-ev{border-color:rgba(0,0,0,.45)}
+  .ep-box.has-ev span{color:#fff;text-shadow:0 0 2px rgba(0,0,0,.7),0 0 2px rgba(0,0,0,.7)}
+  .ep-line{position:absolute;height:2px;background:rgba(0,150,199,.7);transform-origin:left center;
+    pointer-events:none;z-index:8}
+  .ep-handle{position:absolute;width:20px;height:20px;border-radius:50%;border:3px solid #fff;cursor:grab;
+    transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.45);z-index:20;touch-action:none}
+  .ep-handle.s{background:#06d6a0}.ep-handle.e{background:#ef476f}
+  .ep-handle:active{cursor:grabbing}
+  .seg-tag{font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:999px}
+  .seg-tag.rc{background:#e2eef5;color:#2d6b8c}
+  .seg-tag.steel{background:#e3001b;color:#fff}
+  .ep-smark{position:absolute;transform:translate(-50%,-100%);z-index:9;pointer-events:none;text-align:center}
+  .ep-smark .sb{width:23px;height:23px;border-radius:50%;border:2.5px solid #e3001b;background:#fff;color:#e3001b;
+    font-weight:800;font-size:13px;line-height:18px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.45)}
+  .ep-smark .st{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+    border-top:7px solid #e3001b;margin:-1px auto 0}
+  .sp-box{position:absolute;border:1px dashed rgba(0,90,140,.5);box-sizing:border-box;cursor:pointer;
+    transition:background .1s}
+  .sp-box.clay{background:rgba(0,180,216,.45);border-color:#0096c7;border-style:solid}
+  .sp-box.sand{background:rgba(255,209,102,.6);border-color:#e0a800;border-style:solid}
+  .sp-box:hover{box-shadow:0 0 0 2px var(--aqua);z-index:6}
+  .ss-in{font-family:inherit;font-size:.85rem;padding:5px 7px;border:1px solid #cfe7f2;border-radius:7px;width:100%;color:var(--ink);background:#fff}
+  .rt-ta{resize:none;overflow:hidden;white-space:pre-wrap;word-break:break-word;line-height:1.35;min-height:34px;display:block}
+  body.app-locked .ep-stage{pointer-events:none}
+  body.app-locked #ssBody input,body.app-locked #routes textarea{pointer-events:none;background:#eef2f5;color:#90a4b0}
+  #lockBtn{font-weight:700}
+  .ss-vl{width:90px;text-align:right;font-weight:700}
+  td.vl-hi{background:#fde2e9}
+  td.vl-mid{background:#fff3cf}
+  td.vl-ok{background:#d8f7ec}
+  .ss-stage{position:relative;width:100%;border:1px solid #cfe7f2;border-radius:12px;overflow:hidden;background:#eef5f9;margin-bottom:14px}
+  .ss-stage img{width:100%;display:block}
+  .ss-lab{position:absolute;transform:translate(-50%,-100%);z-index:8;pointer-events:none;text-align:center;font-weight:700;font-size:11px}
+  .ss-lab.alt{transform:translate(-50%,-220%)}
+  .ss-lab .ss-lb{background:rgba(255,255,255,.88);border:1.5px solid currentColor;border-radius:6px;padding:1px 6px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .ss-lab .ss-tri{color:currentColor;font-size:10px;line-height:1;margin-top:-1px}
+  .ss-pt{position:absolute;transform:translate(-50%,-100%);z-index:8;text-align:center;font-weight:700;font-size:11px;cursor:grab}
+  .ss-pt:active{cursor:grabbing}
+  .ss-pt .ss-lb{background:none;border:none;padding:0 2px;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 4px #fff}
+  .ss-pt .ss-dot{width:11px;height:11px;border-radius:50%;background:currentColor;border:2px solid #fff;margin:3px auto 0;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .ep-listhead{font-size:1rem;color:var(--deep);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+  /* modal */
+  .ep-modal{position:fixed;inset:0;background:rgba(2,40,60,.5);backdrop-filter:blur(3px);display:none;
+    align-items:center;justify-content:center;z-index:100;padding:20px}
+  .ep-modal.show{display:flex}
+  .ep-modal-box{background:#fff;border-radius:18px;padding:24px;width:min(460px,100%);box-shadow:0 20px 60px rgba(0,40,70,.4)}
+  .ep-modal-box h3{color:var(--deep);font-size:1.15rem;margin-bottom:16px}
+  .ep-field{margin-bottom:14px;display:flex;flex-direction:column;gap:5px}
+  .ep-field label{font-size:.8rem;color:#5b7a8c;font-weight:600}
+  .ep-field input,.ep-field select,.ep-field textarea{font-family:inherit;font-size:.9rem;padding:9px 11px;
+    border:1px solid #cfe7f2;border-radius:9px;color:var(--ink);background:#fff;resize:vertical}
+  .ep-colors{display:flex;gap:8px;flex-wrap:wrap}
+  .ep-color{width:30px;height:30px;border-radius:7px;cursor:pointer;border:3px solid transparent}
+  .ep-color.sel{border-color:var(--deep);box-shadow:0 0 0 2px #fff inset}
+  .ep-modal-actions{display:flex;align-items:center;gap:10px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hero-inner">
+    <span class="badge">💧 การประปานครหลวง · Metropolitan Waterworks Authority</span>
+    <button id="lockBtn" class="badge" style="cursor:pointer;border:1px solid rgba(255,255,255,.3);display:none">🔒</button>
+    <span class="badge" id="syncStatus" style="margin-left:8px">⚪ โหมดออฟไลน์ (ยังไม่ตั้งค่า Supabase)</span>
+    <h1>โครงการก่อสร้างอุโมงค์ส่งน้ำ สาย 9C</h1>
+    <p class="sub">ระบบติดตามงานเจาะอุโมงค์ด้วยหัวเจาะ TBM (Tunnel Boring Machine) เส้นผ่านศูนย์กลางภายนอก 3,980 มิลลิเมตร เชื่อมต่อบ่อก่อสร้าง 9C-1 ถึง 9C-10</p>
+    <div class="hero-spec">
+      <div class="chip">Ø ภายนอก<b>3,980 mm</b></div>
+      <div class="chip">ระยะทางรวม<b>15,620.7 m</b></div>
+      <div class="chip">หัวเจาะ<b>4 TBM</b></div>
+      <div class="chip">บ่อก่อสร้าง<b>9C-1 → 9C-10</b></div>
+    </div>
+  </div>
+  <svg class="waves" viewBox="0 24 150 28" preserveAspectRatio="none">
+    <defs><path id="w" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"/></defs>
+    <g><use href="#w" x="48" y="0"/><use href="#w" x="48" y="3"/><use href="#w" x="48" y="6"/></g>
+  </svg>
+</header>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">📊</div>
+      <div><h2>ภาพรวมโครงการ</h2><small>สรุปตัวชี้วัดหลักจากข้อมูล MWA.xlsx</small></div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <!-- TBM FLEET -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">⚙️</div>
+      <div><h2>หัวเจาะอุโมงค์ (TBM Fleet)</h2><small>เครื่องเจาะแบบ Earth Pressure Balance ทั้ง 4 ชุด</small></div>
+    </div>
+    <div class="fleet" id="fleet"></div>
+  </section>
+
+  <!-- ROUTES -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">🛤️</div>
+      <div><h2>เส้นทางและระยะทางการเจาะ</h2><small>แบ่งช่วงตามบ่อก่อสร้างและหัวเจาะที่รับผิดชอบ</small></div>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table style="min-width:820px">
+        <thead><tr>
+          <th>ช่วงเส้นทาง</th><th>หัวเจาะ TBM</th><th>ทิศทางการเจาะ</th><th style="text-align:right">ความยาว (ม.)</th><th>ยกหัวเจาะลงบ่อ</th><th>ยกหัวเจาะขึ้นบ่อ</th><th>รูปแบบการเข้าบ่อ</th>
+        </tr></thead>
+        <tbody id="routes"></tbody>
+        <tfoot><tr><td colspan="3">ระยะทางรวม (ไม่รวมระยะหัวเจาะ TBM 3 ที่เสียหาย)</td><td class="num">15,620.7</td><td colspan="3"></td></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">📈</div>
+      <div><h2>การวิเคราะห์เชิงกราฟ</h2><small>เปรียบเทียบระยะทางและสัดส่วนประเภทเหตุการณ์</small></div>
+    </div>
+    <div class="grid2">
+      <div class="chartbox"><h3>ระยะทางการเจาะแต่ละช่วง (เมตร)</h3><div class="chart-wrap"><canvas id="lenChart"></canvas></div></div>
+      <div class="chartbox"><h3>สัดส่วนเหตุการณ์ตามประเภท</h3><div class="chart-wrap"><canvas id="evChart"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">📋</div>
+      <div><h2>บันทึกเหตุการณ์ระหว่างการเจาะ (Event Log)</h2><small>แยกตามช่วงเส้นทาง · จำแนกเป็น Segment / Holiday / Other</small></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--seg)"></span>Segment — ปัญหาเซกเมนต์/แหวนอุโมงค์</span>
+      <span><span class="dot" style="background:var(--hol)"></span>Holiday — วันหยุด</span>
+      <span><span class="dot" style="background:var(--oth)"></span>Other — เหตุอื่น ๆ</span>
+    </div>
+    <div id="events"></div>
+    <div class="note-box">
+      <b>หมายเหตุเรื่องวันที่:</b> วันที่ในไฟล์ต้นฉบับถูกบันทึกหลายรูปแบบ (บางช่องถูกแปลงโดย Excel) จึงแสดงตามค่าที่บันทึกไว้จริงโดยไม่ดัดแปลง เพื่อความถูกต้องของข้อมูลดิบ ตัวเลขระยะทางและรายการเหตุการณ์ตรวจสอบแล้วตรงกับไฟล์ MWA.xlsx
+    </div>
+  </section>
+
+  <!-- ERECTION PLAN -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">🧱</div>
+      <div><h2>ผังติดตั้งเซกเมนต์บนแบบ Erection Plan และบันทึกเหตุการณ์</h2>
+      <small>วางกล่องเซกเมนต์ทับบนแบบให้ตรงตามเลขวง · คลิกกล่องเพื่อกรอกเหตุการณ์และระบายสี</small></div>
+    </div>
+
+    <div class="ep-toolbar">
+      <label>แผ่นแบบ (Erection Plan)
+        <select id="epPage"></select>
+      </label>
+      <label>เลขวงเริ่มของแถว
+        <input id="epStart" type="text" placeholder="เช่น SG10484" size="10">
+      </label>
+      <label>จำนวนกล่องในแถว
+        <input id="epCount" type="number" min="1" max="300" style="width:90px">
+      </label>
+      <label>ความหนากล่อง (px)
+        <input id="epSize" type="range" min="16" max="80" value="40" style="width:120px">
+      </label>
+      <button class="ep-btn primary" id="epApply">อัปเดตแถว</button>
+      <span class="ep-spacer"></span>
+      <button class="ep-btn" id="epExport">⬇ ส่งออก JSON</button>
+      <button class="ep-btn" id="epImportBtn">⬆ นำเข้า JSON</button>
+      <input id="epImport" type="file" accept="application/json" style="display:none">
+      <button class="ep-btn" id="epConnect" title="เลือกโฟลเดอร์ 2.Report Effect เพื่อบันทึกไฟล์ลงโฟลเดอร์โดยตรง (Chrome/Edge)">🔗 เชื่อมต่อโฟลเดอร์ 2.Report Effect</button>
+      <span class="ep-meta" id="epDirStatus" style="margin-left:0">ยังไม่ได้เชื่อมต่อโฟลเดอร์</span>
+      <button class="ep-btn primary" id="epExportAll" title="บันทึกข้อมูลทั้งหมด (Erection/Soil/VL) ลงโฟลเดอร์ เพื่อใช้สร้าง Appendix">📦 ส่งออกข้อมูลทั้งหมดสำหรับ Appendix</button>
+    </div>
+
+    <div class="ep-rowsbar">
+      <b style="font-size:.82rem;color:var(--deep)">แถวกล่อง:</b>
+      <span id="epRows"></span>
+      <button class="ep-btn small" id="epAddRow">+ เพิ่มแถว</button>
+      <button class="ep-btn small danger" id="epDelRow">ลบแถวที่เลือก</button>
+    </div>
+
+    <div class="ep-hint">
+      <b>วิธีจัดกล่องให้ตรงแบบ:</b> เลือกแถวที่ต้องการ แล้วลากจุด <b style="color:#06b88a">เขียว (วงเริ่ม)</b> ไปไว้ที่กล่องแรก และจุด <b style="color:#ef476f">แดง (วงสุดท้าย)</b> ไปไว้ที่กล่องสุดท้ายของแนวนั้นในแบบ — กล่องจะกระจายเรียงตามเลขวงให้อัตโนมัติ · ปรับ "จำนวนกล่อง" และ "ความหนากล่อง" ให้พอดีกับแบบ · ข้อมูลถูกบันทึกอัตโนมัติในเบราว์เซอร์
+    </div>
+
+    <div class="ep-legend">
+      <b>สีเหตุการณ์:</b>
+      <span class="ep-sw" style="background:#ef476f" title="Segment / รุนแรง"></span>
+      <span class="ep-sw" style="background:#ff9e40" title="ซ่อมบำรุง"></span>
+      <span class="ep-sw" style="background:#ffd166" title="วันหยุด/ล่าช้า"></span>
+      <span class="ep-sw" style="background:#06d6a0" title="ปกติ/แล้วเสร็จ"></span>
+      <span class="ep-sw" style="background:#00b4d8" title="น้ำ/รั่วซึม"></span>
+      <span class="ep-sw" style="background:#9b5de5" title="อื่น ๆ"></span>
+      <span class="ep-meta" id="epMeta"></span>
+    </div>
+
+    <div class="ep-stage" id="epStage">
+      <img id="epImg" alt="Erection Plan 9C">
+      <div class="ep-ov" id="epOv"></div>
+    </div>
+
+    <h3 class="ep-listhead">รายการเหตุการณ์ที่บันทึก (แผ่นนี้) <span id="epListCount" class="count-badge">0</span>
+      <span class="ep-spacer"></span>
+      <button class="ep-btn small danger" id="epClear">ล้างเหตุการณ์แผ่นนี้</button>
+    </h3>
+    <div class="card"><table><thead><tr>
+      <th>แถว</th><th>กล่อง (Ring)</th><th>ประเภท</th><th>รายละเอียด</th><th>วันที่</th><th></th>
+    </tr></thead><tbody id="epList"></tbody></table></div>
+  </section>
+
+  <!-- SOIL PROFILE -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">⛰️</div>
+      <div><h2>ข้อมูลสำรวจชั้นดิน (Soil Profile)</h2>
+      <small>แสดงแบบหน้าตัดธรณีจริง · ไฮไลต์ชนิดดินทุกช่วง 0+100 — คลิกกล่องเพื่อสลับ CLAY (ฟ้า) / SAND (เหลือง)</small></div>
+    </div>
+    <div class="ep-toolbar">
+      <label>แผ่นโปรไฟล์ดิน
+        <select id="spPage"></select>
+      </label>
+      <label>Chainage เริ่ม (ม.)
+        <input id="spKm" type="number" step="50" style="width:100px">
+      </label>
+      <label>จำนวนช่วง 0+100
+        <input id="spCount" type="number" min="1" max="60" style="width:90px">
+      </label>
+      <label>ความสูงแถบ (px)
+        <input id="spSize" type="range" min="14" max="140" value="46" style="width:120px">
+      </label>
+      <button class="ep-btn primary" id="spApply">อัปเดตแถบ</button>
+      <span class="ep-spacer"></span>
+      <button class="ep-btn" id="spExport">⬇ ส่งออก JSON</button>
+      <button class="ep-btn" id="spImportBtn">⬆ นำเข้า JSON</button>
+      <input id="spImport" type="file" accept="application/json" style="display:none">
+      <button class="ep-btn danger" id="spClear">ล้างแผ่นนี้</button>
+    </div>
+    <div class="ep-legend">
+      <b>ชนิดดิน:</b>
+      <span class="ep-sw" style="background:#00b4d8"></span> CLAY (ดินเหนียว)
+      <span class="ep-sw" style="background:#ffd166"></span> SAND (ทราย)
+      <span class="ep-meta" id="spMeta"></span>
+    </div>
+    <div class="ep-hint">
+      <b>วิธีใช้:</b> ลากจุด <b style="color:#06b88a">เขียว</b> และ <b style="color:#ef476f">แดง</b> ให้คร่อมแนวหน้าตัดดินตามต้องการ จากนั้นคลิกกล่องแต่ละช่วง 0+100 เพื่อสลับสี: ว่าง → <b style="color:#0096c7">CLAY (ฟ้า)</b> → <b style="color:#caa400">SAND (เหลือง)</b> → ว่าง · ข้อมูลบันทึกอัตโนมัติในเบราว์เซอร์
+    </div>
+    <div class="ep-stage" id="spStage">
+      <img id="spImg" alt="Soil Profile 9C">
+      <div class="ep-ov" id="spOv"></div>
+    </div>
+  </section>
+
+  <!-- SURFACE SETTLEMENT / VOLUME LOSS -->
+  <section>
+    <div class="sec-head">
+      <div class="ic">📈</div>
+      <div><h2>รายงานผลการตรวจวัด — Surface Settlement &amp; Volume Loss</h2>
+      <small>ตำแหน่งจุดวัดการทรุดตัวผิวดิน (Surface Settlement Point) จาก Instrument 9C · บันทึก/แก้ไขค่า Volume Loss (%VL) รายตำแหน่ง</small></div>
+    </div>
+    <div class="ep-toolbar">
+      <label>แผ่นผังเครื่องมือวัด (Instrument 9C)
+        <select id="ssPage"></select>
+      </label>
+      <label>กม. เริ่ม
+        <input id="ssKmA" type="text" placeholder="0+000" style="width:90px">
+      </label>
+      <label>กม. สิ้นสุด
+        <input id="ssKmB" type="text" placeholder="0+525" style="width:90px">
+      </label>
+      <button class="ep-btn primary" id="ssApply">อัปเดตชื่อ/ป้าย</button>
+      <button class="ep-btn" id="ssAuto">↺ จัดจุดอัตโนมัติ</button>
+      <span class="ep-spacer"></span>
+      <button class="ep-btn" id="ssReset">↺ รีเซ็ตค่าจาก Excel</button>
+      <button class="ep-btn" id="ssExport">⬇ ส่งออก JSON</button>
+      <button class="ep-btn" id="ssImportBtn">⬆ นำเข้า JSON</button>
+      <input id="ssImport" type="file" accept="application/json" style="display:none">
+      <button class="ep-btn primary" id="ssSaveDir">💾 บันทึกลงโฟลเดอร์ 2.Report Effect</button>
+    </div>
+    <div class="ep-hint"><b>การแสดงผล:</b> แต่ละจุดวัดที่มีค่า VL จะแสดงเป็น “จุด” พร้อมป้าย “CH. x+xxx, VL = x%” วางตามตำแหน่ง Chainage อัตโนมัติ (ค่าดึงจากตาราง %VL ด้านล่าง) · ปรับช่วง กม. ที่ช่องด้านบนแล้วกด “อัปเดตชื่อ/ป้าย” · ต้องการเลื่อนจุดให้ตรงแบบ ลากจุดนั้นได้โดยตรง · กด “จัดจุดอัตโนมัติ” เพื่อรีเซ็ตตำแหน่ง</div>
+    <div class="ep-stage" id="ssStage"><img id="ssImg" alt="Instrument 9C Surface Settlement Layout"><div class="ep-ov" id="ssOv"></div></div>
+    <div class="ep-legend">
+      <b>เกณฑ์สี %VL:</b>
+      <span class="ep-sw" style="background:#06d6a0"></span> ≤ 0.5%
+      <span class="ep-sw" style="background:#ffd166"></span> 0.5–1.0%
+      <span class="ep-sw" style="background:#ef476f"></span> &gt; 1.0%
+      <span class="ep-meta" id="ssMeta"></span>
+    </div>
+    <div class="card" style="overflow-x:auto"><table style="min-width:860px"><thead><tr>
+      <th>Array</th><th>ช่วงเจาะ</th><th>Chainage</th><th style="text-align:right">Volume Loss (%VL)</th><th>Settlement สูงสุด (มม.)</th><th>วันที่ตรวจวัด</th><th>หมายเหตุ</th>
+    </tr></thead><tbody id="ssBody"></tbody></table></div>
+  </section>
+
+  <!-- modal -->
+  <div class="ep-modal" id="epModal">
+    <div class="ep-modal-box">
+      <h3 id="epModalTitle">เหตุการณ์ที่วง</h3>
+      <div class="ep-field"><label>ประเภทเหตุการณ์</label>
+        <select id="epfType">
+          <option value="Segment">Segment — ปัญหาเซกเมนต์/แหวนอุโมงค์</option>
+          <option value="Maintenance">Maintenance — ซ่อมบำรุง</option>
+          <option value="Holiday">Holiday — วันหยุด/ล่าช้า</option>
+          <option value="Water">Water — น้ำรั่ว/ทรายไหล</option>
+          <option value="Done">Done — ปกติ/แล้วเสร็จ</option>
+          <option value="Other">Other — อื่น ๆ</option>
+        </select>
+      </div>
+      <div class="ep-field"><label>ชนิด Segment</label>
+        <select id="epfSeg">
+          <option value="RC">RC — คอนกรีตเสริมเหล็ก</option>
+          <option value="Steel">Steel — เหล็ก (ลายกากบาท)</option>
+        </select>
+      </div>
+      <div class="ep-field"><label>รายละเอียด</label>
+        <textarea id="epfDesc" rows="3" placeholder="อธิบายเหตุการณ์ที่เกิดขึ้น..."></textarea>
+      </div>
+      <div class="ep-field"><label>วันที่ / ช่วงวันที่</label>
+        <input id="epfDate" type="text" placeholder="เช่น 22/12/2024 หรือ 19/6/2025 – 21/6/2025">
+      </div>
+      <div class="ep-field"><label>แนบไฟล์ PDF (Report Effect)</label>
+        <input id="epfPdf" type="file" accept="application/pdf">
+        <span id="epfPdfCur" style="font-size:.78rem;color:#5b7a8c"></span>
+      </div>
+      <div class="ep-field"><label>สีประจำช่อง</label>
+        <div id="epfColors" class="ep-colors"></div>
+      </div>
+      <div class="ep-modal-actions">
+        <button class="ep-btn danger" id="epfDelete">ลบ</button>
+        <span class="ep-spacer"></span>
+        <button class="ep-btn" id="epfCancel">ยกเลิก</button>
+        <button class="ep-btn primary" id="epfSave">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wave-line"></div>
+  จัดทำจากข้อมูล <b>MWA.xlsx</b> · โครงการอุโมงค์ส่งน้ำ สาย 9C · การประปานครหลวง<br>
+  รูปแบบข้อมูลสำหรับงานอุโมงค์ในประเทศไทย
+</footer>
+
+<script>
+/* ---------- DATA (ตรวจสอบจาก MWA.xlsx) ---------- */
+const ROUTES=[
+ {seg:"9C-1 → 9C-2",tbm:"TBM 1 (CREG 1162)",dir:"จาก 9C-2 ถึง 9C-1",len:2263.1,down:"21/08/1967",up:"รออัปเดต",entry:"รออัปเดต"},
+ {seg:"9C-2 → 9C-3",tbm:"TBM 3 (HK)",dir:"จาก 9C-3 ถึง 9C-2",len:2624.1,down:"01/06/1968",up:"รออัปเดต",entry:"Sand Cement"},
+ {seg:"9C-3 → 9C-5",tbm:"TBM 1 (CREG 1162)",dir:"จาก 9C-3 ถึง 9C-4 ถึง 9C-5",len:2322.2,down:"09/02/1966",up:"รออัปเดต",entry:"รออัปเดต"},
+ {seg:"9C-5 → 9C-6",tbm:"TBM 4 (CREG 1165)",dir:"จาก 9C-5 ถึง 9C-6",len:50.2,down:"01/03/1968",up:"รออัปเดต",entry:"Sand Cement"},
+ {seg:"9C-6 → 9C-7",tbm:"TBM 2 (CREG 1163)",dir:"จาก 9C-9 ถึง 9C-8 ถึง 9C-6",len:5308.6,down:"22/08/1966",up:"รออัปเดต",entry:"Sand Cement"},
+ {seg:"9C-9 → 9C-10",tbm:"TBM 4 (CREG 1165)",dir:"จาก 9C-9 ถึง 9C-10",len:3052.5,down:"06/02/1967",up:"รออัปเดต",entry:"รออัปเดต"}
+];
+const FLEET=[
+ {n:"TBM 1",code:"CREG 1162",route:"9C-2→9C-1 · 9C-3→9C-5",len:"4,585.3 ม."},
+ {n:"TBM 2",code:"CREG 1163",route:"9C-9→9C-8→9C-6",len:"5,308.6 ม."},
+ {n:"TBM 3",code:"CREG 1164 (HK)",route:"9C-3→9C-2",len:"2,624.1 ม.",note:"เครื่องใหม่ตามแก้ไขสัญญา (เครื่องเดิมเสียหาย)"},
+ {n:"TBM 4",code:"CREG 1165",route:"9C-5→9C-6 · 9C-9→9C-10",len:"3,102.7 ม."}
+];
+const EVENTS={
+ "9C-1 → 9C-2":{
+  segment:[["Segment Keys (R167)","22/12/2024"],["Segment Crack (R813)","19/6/2025 – 23/6/2025"],["Segment Keys/Water leak","09/02/2025 – 09/03/2025"],["Segment Keys (R1421)","20/9/2025"],["Segment Crack (R1984)","12/10/2025 – 12/11/2025"]],
+  holiday:[["New Year","28/12/2024 – 01/02/2025"],["Song kran","04/12/2025 – 17/4/2025"]],
+  other:[["Screw Conveyer Problem","11/07/2024 – 11/08/2024"],["Setting Back up car","28/11/2024 – 12/10/2024"],["Install Pocket Track&Double track","01/03/2025 – 15/1/2025"],["Over Settlement Road (Bangparn Bridge)","24/1/2025 – 21/2/2025"],["Earthquake","28/3/2025"],["Chiller Problem","04/09/2025 – 04/11/2025"],["Hopper Problem","22/5/2025 – 30/5/2025"],["Repair Railways","28/10/2025 – 29/10/2025"],["Chiller Problem","31/10/2025 – 11/03/2025"],["Hopper Problem","12/08/2025 – 12/10/2025"],["Hopper Problem","12/12/2025 – 13/12/2025"]]
+ },
+ "9C-2 → 9C-3":{
+  segment:[["Segment Crack (R1476,1475)","20/9/2025 – 21/9/2025"],["Water leake","21/1/2026"]],
+  holiday:[["New Year","01/01/2026 – 01/04/2026"]],
+  other:[["Back Up in Tunnel","07/09/2025 – 07/11/2025"],["Grease Problem","25/9/2025"],["Drain Pipe Problem","21/10/2025"],["Safety Seminar","16/11/2025"],["Move labor to TBM 1","22/11/2025 – 23/11/2025"],["Waiting TBM 1 in Shaft","26/11/2025 – 14/12/2025"],["Waiting TBM 1 Filling","24/12/2025 – 31/12/2025"],["Waiting TBM 1 Filling","01/05/2026 – 20/1/2026"],["Filling & Install Bulk head","22/1/2026 – 02/02/2026"]]
+ },
+ "9C-3 → 9C-5":{
+  segment:[["Water&Sand leake","22/7/2023 – 23/7/2023"]],
+  holiday:[["New Year","28/12/2023 – 01/02/2024"]],
+  other:[["Soft Eye Grouting","04/03/2023 – 28/4/2023"],["Setting Backup Car","17/5/2023 – 30/5/2023"],["Install Pocket Track","18/6/2023 – 25/6/2023"],["Pump Problem","16/7/2023 – 17/7/2023"],["Rapair Track","09/09/2023"],["Cleaning","28/9/2023 – 30/9/2023"],["Repair Morter&Copy Cutter","16/10/2023"],["Install Pocket Track","28/10/2023 – 11/01/2023"],["Slurry Tank Problem","11/10/2023 – 11/11/2023"],["Labor TBM 1 to TBM 3","25/11/2023 – 26/11/2023"],["Labor TBM 1 to TBM 3","12/09/2023 – 12/10/2023"],["Eractor Problem","16/12/2023 – 17/12/2023"],["Labor TBM 1 to TBM 2","26/12/2023 – 27/12/2023"]]
+ },
+ "9C-5 → 9C-6":{
+  segment:[],
+  holiday:[],
+  other:[["Compact Excavator Problem","20/6/2025"],["Cleaning Shaft","26/6/2025 – 29/6/2025"],["Filling Sand Cement","30/6/2025 – 07/06/2025"],["Filling Water&Test","07/07/2025 – 07/08/2025"],["Hopper Problem","07/11/2025"]]
+ },
+ "9C-6 → 9C-9":{
+  segment:[["Invert Main Drive","12/07/2023 – 20/12/2023"],["Hoist Segment Problem","21/12/2023"],["Segment Crack","15/1/2024 – 19/1/2024"],["Segment Crack","26/1/2024"],["Segment Crack","14/2/2024 – 16/2/2024"],["Segment Crack","23/3/2024 – 24/3/2024"],["Segment Crack","22/4/2024 – 30/4/2024"],["Segment Crack","07/02/2024 – 07/09/2024"],["Water&Sand leake","17/7/2024"],["Water&Sand leake","27/7/2024 – 08/04/2024"],["Segment Crack","12/08/2024"],["Segment Crack","24/8/2024 – 29/8/2024"],["Water&Sand leake","16/1/2025 – 19/1/2025"],["Water&Sand leake","04/02/2025 – 04/03/2025"],["Water&Sand leake","24/4/2025 – 25/4/2025"],["Water&Sand leake","29/4/2025"],["Hoist Segment Problem","18/7/2025"]],
+  holiday:[["New Year","27/12/2023 – 01/04/2024"],["Songkarn","04/10/2024 – 17/4/2024"],["Labour Day","05/01/2024"],["New Year","27/12/2024 – 01/02/2025"],["Songkarn","04/11/2025 – 17/4/2025"]],
+  other:[["Jet Grout","10/06/2023 – 10/08/2023"],["Jet Grout","15/10/2023 – 11/02/2023"],["Filling Sand Cement&Tunnel in shaft","11/03/2023 – 27/11/2023"],["DOH Warning  (7 Days)","01/08/2024 – 14/1/2024"],["TBM Problem","23/1/2024"],["Install Double track","27/1/2024 – 02/07/2024"],["Hydraulic Jack Problem","02/12/2024"],["Eractor Problem","18/2/2024"],["Eractor Problem","27/2/2024 – 29/2/2024"],["Screw Conveyor Problem","03/06/2024 – 03/11/2024"],["Eractor Problem","15/3/2024 – 20/3/2024"],["Tunnel Miss Alignment","20/4/2024 – 21/4/2024"],["Install Pocket Track","06/07/2024 – 14/6/2024"],["Train Derailment","20/7/2024 – 21/7/2024"],["Wating Water Test","31/8/2024 – 15/9/2024"],["Tunnel In Shaft","17/9/2024 – 28/11/2024"],["Excavation Sand","12/07/2024 – 12/10/2024"],["Install Ventilation Duct","12/11/2024 – 12/12/2024"],["Install Y-Switch","01/03/2025 – 01/08/2025"],["Raiway Track Maintenance","02/01/2025 – 02/03/2025"],["Raiway Track Maintenance","14/2/2025 – 03/05/2024"],["Earthquake","28/3/2025 – 29/3/2025"],["Raiway Track Maintenance","04/07/2025 – 04/10/2025"],["Chiller Problem","26/4/2025"],["Eractor Problem","30/4/2025"],["Eractor Problem","05/10/2025"],["Install Pocket Track","23/5/2025 – 06/01/2025"],["Change Duct","19/7/2025 – 22/7/2025"],["Eractor Problem","08/02/2025"],["Eractor Problem","10/11/2025"],["Hopper Problem","13/10/2025 – 20/10/2026"],["Obstruction wall shaft","21/10/2025 – 11/03/2025"],["Waiting Sand Cement in shaft","11/04/2025 – 12/01/2025"]]
+ },
+ "9C-9 → 9C-10":{
+  segment:[["Segment Crack","03/08/2024"],["Segment Crack","27/4/2024"],["Segment Crack","07/08/2024"],["Segment Crack","17/7/2024"],["Segment Crack","20/7/2024"],["Segment Crack","08/12/2024"],["Srgment Crack&Water leake","22/8/2024 – 26/8/2024"],["Install Steel Ring","27/8/2024 – 31/8/2024"],["Segment Crack","09/04/2024 – 14/9/2024"],["Segment Crack","17/9/2024"],["Segment Crack","22/9/2024"],["Segment Crack","10/10/2024"],["Install Steel Ring","14/10/2024"],["Water leake","15/10/2024"],["Water leake","17/10/2024"],["Segment Crack","20/10/2024"],["Water leake","21/10/2024"]],
+  holiday:[["Songkran","04/11/2024 – 16/4/2024"],["Labour Day","05/01/2024"]],
+  other:[["Install wire in tunnel","17/3/2024 – 25/3/2024"],["Install Platform","04/04/2024 – 04/10/2024"],["Hopper Problem","05/11/2024"],["Hopper Problem","07/09/2024"],["Install Pocket Track","07/10/2024 – 07/12/2024"],["Wire Drop","08/02/2024 – 08/03/2024"],["Wire Drop","16/9/2024"],["Wire Drop","19/10/2024"],["Grantry crane Problem","26/10/2024 – 30/10/2024"],["Waiting Wall Shaft","31/10/2024 – 17/11/2024"]]
+ }
+};
+
+/* ---------- RENDER ---------- */
+let totalEv=0,tSeg=0,tHol=0,tOth=0;
+for(const k in EVENTS){const e=EVENTS[k];tSeg+=e.segment.length;tHol+=e.holiday.length;tOth+=e.other.length;}
+totalEv=tSeg+tHol+tOth;
+
+const stats=[
+ {lbl:"เส้นผ่านศูนย์กลางภายนอกอุโมงค์",val:"3,980",unit:"มม."},
+ {lbl:"ระยะทางเจาะรวม",val:"15,620.7",unit:"เมตร"},
+ {lbl:"หัวเจาะ TBM",val:"4",unit:"เครื่อง"},
+ {lbl:"ช่วงเส้นทางหลัก",val:"6",unit:"ช่วง"},
+ {lbl:"เหตุการณ์ที่บันทึก",val:String(totalEv),unit:"รายการ"}
+];
+document.getElementById('stats').innerHTML=stats.map(s=>
+ `<div class="stat"><div class="lbl">${s.lbl}</div><div class="val">${s.val} <span class="unit">${s.unit}</span></div></div>`).join('');
+
+document.getElementById('fleet').innerHTML=FLEET.map(t=>
+ `<div class="tbm"><h3>🛞 ${t.n}</h3><div class="code">รหัสเครื่อง: ${t.code}</div>
+  <div class="row"><span>เส้นทาง</span><span>${t.route}</span></div>
+  <div class="row"><span>ระยะทางรวม</span><span>${t.len}</span></div>
+  ${t.note?`<div class="note">⚠ ${t.note}</div>`:''}</div>`).join('');
+
+const muted=v=>v==='รออัปเดต'?`<span style="color:#9bb3c0">${v}</span>`:v;
+let RT={}; try{const _s=localStorage.getItem('mwa9c_routes_v1'); if(_s)RT=JSON.parse(_s);}catch(e){}
+function saveRoutes(){try{localStorage.setItem('mwa9c_routes_v1',JSON.stringify(RT));}catch(e){}}
+function rtVal(seg,fld,def){const o=RT[seg]||{}; return o[fld]!==undefined?o[fld]:def;}
+function escTa(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function rtGrow(t){t.style.height='auto'; t.style.height=(t.scrollHeight)+'px';}
+function renderRoutes(){
+ const tb=document.getElementById('routes');
+ tb.innerHTML=ROUTES.map(r=>
+  `<tr><td><span class="pill">${r.seg}</span></td><td>${r.tbm}</td><td>${r.dir}</td><td class="num">${r.len.toLocaleString('en-US',{minimumFractionDigits:1})}</td><td>${muted(r.down)}</td>`+
+  `<td><textarea class="ss-in rt-ta" rows="1" data-seg="${r.seg}" data-fld="up" placeholder="ระบุ...">${escTa(rtVal(r.seg,'up',r.up))}</textarea></td>`+
+  `<td><textarea class="ss-in rt-ta" rows="1" data-seg="${r.seg}" data-fld="entry" placeholder="ระบุ...">${escTa(rtVal(r.seg,'entry',r.entry))}</textarea></td></tr>`).join('');
+ tb.querySelectorAll('.rt-ta').forEach(rtGrow);
+}
+renderRoutes();
+document.getElementById('routes').addEventListener('input',e=>{const el=e.target.closest('.ss-in'); if(!el)return; const seg=el.dataset.seg, fld=el.dataset.fld; if(!RT[seg])RT[seg]={}; RT[seg][fld]=el.value; saveRoutes(); if(el.classList&&el.classList.contains('rt-ta'))rtGrow(el);});
+
+/* tabs + events */
+const keys=Object.keys(EVENTS);
+const tabsEl=document.getElementById('tabs');
+keys.forEach((k,i)=>{const b=document.createElement('button');b.className='tab'+(i===0?' active':'');b.textContent=k;
+ b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderEvents(k);};
+ tabsEl.appendChild(b);});
+
+function renderEvents(k){
+ const e=EVENTS[k];const wrap=document.getElementById('events');
+ const block=(title,cls,arr)=>{
+   if(!arr.length)return '';
+   return `<div class="ev-group"><button class="grp-title"><span class="chev">▼</span><span class="dot" style="background:var(--${cls})"></span>${title} <span class="count-badge">${arr.length}</span></button>
+   <div class="ev-list">${arr.map(([n,d])=>`<div class="ev ${cls}"><span class="cat ${cls}">${title}</span><span class="name">${n}</span><span class="date">${d||'-'}</span><button class="hide-btn" title="ซ่อนเหตุการณ์นี้">×</button></div>`).join('')}</div></div>`;
+ };
+ wrap.innerHTML=`<div class="ev-tools"><button class="ep-btn small" data-act="collapse">▾ ย่อทั้งหมด</button><button class="ep-btn small" data-act="expand">▸ ขยายทั้งหมด</button><button class="ep-btn small" data-act="show">แสดงที่ซ่อนไว้</button></div>`
+   +block('Segment','seg',e.segment)+block('Holiday','hol',e.holiday)+block('Other','oth',e.other);
+}
+renderEvents(keys[0]);
+const evWrap=document.getElementById('events');
+evWrap.addEventListener('click',ev=>{
+ const t=ev.target;
+ const act=t.closest('[data-act]');
+ if(act){const a=act.dataset.act;
+   if(a==='collapse')evWrap.querySelectorAll('.ev-group').forEach(g=>g.classList.add('collapsed'));
+   if(a==='expand')evWrap.querySelectorAll('.ev-group').forEach(g=>g.classList.remove('collapsed'));
+   if(a==='show')evWrap.querySelectorAll('.ev.hidden').forEach(x=>x.classList.remove('hidden'));
+   return;}
+ if(t.classList.contains('hide-btn')){t.closest('.ev').classList.add('hidden');return;}
+ const gt=t.closest('.grp-title');
+ if(gt){gt.closest('.ev-group').classList.toggle('collapsed');}
+});
+
+/* charts */
+new Chart(document.getElementById('lenChart'),{
+ type:'bar',
+ data:{labels:ROUTES.map(r=>r.seg),datasets:[{label:'ความยาว (ม.)',data:ROUTES.map(r=>r.len),
+   backgroundColor:'rgba(0,150,199,.8)',borderRadius:8,borderColor:'#005b8c',borderWidth:1}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+   scales:{y:{beginAtZero:true,grid:{color:'#e3f1f8'},ticks:{callback:v=>v.toLocaleString()}},x:{grid:{display:false}}}}
+});
+new Chart(document.getElementById('evChart'),{
+ type:'doughnut',
+ data:{labels:['Segment ('+tSeg+')','Holiday ('+tHol+')','Other ('+tOth+')'],
+   datasets:[{data:[tSeg,tHol,tOth],backgroundColor:['#ef476f','#ffd166','#06d6a0'],borderWidth:3,borderColor:'#fff'}]},
+ options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom'}}}
+});
+
+/* ================= ERECTION PLAN — IMAGE OVERLAY ================= */
+const EP_COLORS=["#ef476f","#ff9e40","#ffd166","#06d6a0","#00b4d8","#9b5de5"];
+const EP_PAGES=[
+ {file:"ep_page1.jpg",label:"กม.0+000 ถึง กม.0+200"},
+ {file:"ep_page2.jpg",label:"กม.0+200 ถึง กม.0+425"},
+ {file:"ep_page3.jpg",label:"กม.0+425 ถึง กม.0+625"},
+ {file:"ep_page4.jpg",label:"กม.0+625 ถึง กม.0+825"},
+ {file:"ep_page5.jpg",label:"กม.0+825 ถึง กม.1+025"},
+ {file:"ep_page6.jpg",label:"กม.1+025 ถึง กม.1+225"},
+ {file:"ep_page7.jpg",label:"กม.1+225 ถึง กม.1+425"},
+ {file:"ep_page8.jpg",label:"กม.1+425 ถึง กม.1+625"},
+ {file:"ep_page9.jpg",label:"กม.1+625 ถึง กม.1+825"},
+ {file:"ep_page10.jpg",label:"กม.1+825 ถึง กม.2+025"},
+ {file:"ep_page11.jpg",label:"กม.2+025 ถึง กม.2+250"},
+ {file:"ep_page12.jpg",label:"กม.2+250 ถึง กม.2+475"},
+ {file:"ep_page13.jpg",label:"กม.2+475 ถึง กม.2+675"},
+ {file:"ep_page14.jpg",label:"กม.2+675 ถึง กม.2+875"},
+ {file:"ep_page15.jpg",label:"กม.2+875 ถึง กม.3+075"},
+ {file:"ep_page16.jpg",label:"กม.3+075 ถึง กม.3+275"},
+ {file:"ep_page17.jpg",label:"กม.3+275 ถึง กม.3+475"},
+ {file:"ep_page18.jpg",label:"กม.3+475 ถึง กม.3+675"},
+ {file:"ep_page19.jpg",label:"กม.3+675 ถึง กม.3+875"},
+ {file:"ep_page20.jpg",label:"กม.3+875 ถึง กม.4+075"},
+ {file:"ep_page21.jpg",label:"กม.4+075 ถึง กม.4+275"},
+ {file:"ep_page22.jpg",label:"กม.4+275 ถึง กม.4+475"},
+ {file:"ep_page23.jpg",label:"กม.4+475 ถึง กม.4+675"},
+ {file:"ep_page24.jpg",label:"กม.4+675 ถึง กม.4+875"},
+ {file:"ep_page25.jpg",label:"กม.4+875 ถึง กม.5+000"},
+ {file:"ep_page26.jpg",label:"กม.5+000 ถึง กม.5+100"},
+ {file:"ep_page27.jpg",label:"กม.5+100 ถึง กม.5+325"},
+ {file:"ep_page28.jpg",label:"กม.5+325 ถึง กม.5+525"},
+ {file:"ep_page29.jpg",label:"กม.5+525 ถึง กม.5+725"},
+ {file:"ep_page30.jpg",label:"กม.5+725 ถึง กม.5+925"},
+ {file:"ep_page31.jpg",label:"กม.5+925 ถึง กม.6+125"},
+ {file:"ep_page32.jpg",label:"กม.6+125 ถึง กม.6+325"},
+ {file:"ep_page33.jpg",label:"กม.6+325 ถึง กม.6+525"},
+ {file:"ep_page34.jpg",label:"กม.6+525 ถึง กม.6+725"},
+ {file:"ep_page35.jpg",label:"กม.6+725 ถึง กม.6+925"},
+ {file:"ep_page36.jpg",label:"กม.6+925 ถึง กม.7+125"},
+ {file:"ep_page37.jpg",label:"กม.7+125 ถึง กม.7+250"},
+ {file:"ep_page38.jpg",label:"กม.7+250 ถึง กม.7+425"},
+ {file:"ep_page39.jpg",label:"กม.7+425 ถึง กม.7+625"},
+ {file:"ep_page40.jpg",label:"กม.7+625 ถึง กม.7+825"},
+ {file:"ep_page41.jpg",label:"กม.7+825 ถึง กม.8+025"},
+ {file:"ep_page42.jpg",label:"กม.8+025 ถึง กม.8+225"},
+ {file:"ep_page43.jpg",label:"กม.8+225 ถึง กม.8+425"},
+ {file:"ep_page44.jpg",label:"กม.8+425 ถึง กม.8+625"},
+ {file:"ep_page45.jpg",label:"กม.8+625 ถึง กม.8+825"},
+ {file:"ep_page46.jpg",label:"กม.8+825 ถึง กม.9+025"},
+ {file:"ep_page47.jpg",label:"กม.9+025 ถึง กม.9+225"},
+ {file:"ep_page48.jpg",label:"กม.9+225 ถึง กม.9+425"},
+ {file:"ep_page49.jpg",label:"กม.9+425 ถึง กม.9+625"},
+ {file:"ep_page50.jpg",label:"กม.9+625 ถึง กม.9+825"},
+ {file:"ep_page51.jpg",label:"กม.9+825 ถึง กม.10+025"},
+ {file:"ep_page52.jpg",label:"กม.10+025 ถึง กม.10+225"},
+ {file:"ep_page53.jpg",label:"กม.10+225 ถึง กม.10+425"},
+ {file:"ep_page54.jpg",label:"กม.10+425 ถึง กม.10+625"},
+ {file:"ep_page55.jpg",label:"กม.10+625 ถึง กม.10+825"},
+ {file:"ep_page56.jpg",label:"กม.10+825 ถึง กม.11+025"},
+ {file:"ep_page57.jpg",label:"กม.11+025 ถึง กม.11+225"},
+ {file:"ep_page58.jpg",label:"กม.11+225 ถึง กม.11+425"},
+ {file:"ep_page59.jpg",label:"กม.11+425 ถึง กม.11+625"},
+ {file:"ep_page60.jpg",label:"กม.11+625 ถึง กม.11+825"},
+ {file:"ep_page61.jpg",label:"กม.11+825 ถึง กม.12+025"},
+ {file:"ep_page62.jpg",label:"กม.12+025 ถึง กม.12+225"},
+ {file:"ep_page63.jpg",label:"กม.12+225 ถึง กม.12+425"},
+ {file:"ep_page64.jpg",label:"กม.12+425 ถึง กม.12+625"},
+ {file:"ep_page65.jpg",label:"กม.12+625 ถึง กม.12+825"},
+ {file:"ep_page66.jpg",label:"กม.12+825 ถึง กม.13+025"},
+ {file:"ep_page67.jpg",label:"กม.13+025 ถึง กม.13+225"},
+ {file:"ep_page68.jpg",label:"กม.13+225 ถึง กม.13+425"},
+ {file:"ep_page69.jpg",label:"กม.13+425 ถึง กม.13+625"},
+ {file:"ep_page70.jpg",label:"กม.13+625 ถึง กม.13+825"},
+ {file:"ep_page71.jpg",label:"กม.13+825 ถึง กม.14+025"},
+ {file:"ep_page72.jpg",label:"กม.14+025 ถึง กม.14+225"},
+ {file:"ep_page73.jpg",label:"กม.14+225 ถึง กม.14+425"},
+ {file:"ep_page74.jpg",label:"กม.14+425 ถึง กม.14+625"},
+ {file:"ep_page75.jpg",label:"กม.14+625 ถึง กม.14+825"},
+ {file:"ep_page76.jpg",label:"กม.14+825 ถึง กม.15+025"},
+ {file:"ep_page77.jpg",label:"กม.15+025 ถึง กม.15+225"},
+ {file:"ep_page78.jpg",label:"กม.15+225 ถึง กม.15+425"},
+ {file:"ep_page79.jpg",label:"กม.15+425 ถึง กม.15+625"},
+ {file:"ep_page80.jpg",label:"กม.15+625 ถึง กม.15+750"}
+];
+const EP_KEY="mwa9c_erection_img_v1";
+const $=id=>document.getElementById(id);
+let EP={pages:{}};
+try{const s=localStorage.getItem(EP_KEY); if(s) EP=JSON.parse(s);}catch(e){}
+let EP_PG=0, EP_ROW=0, EP_EDIT=null, EP_PICK=EP_COLORS[0], drag=null;
+const colorOf=t=>({Segment:"#ef476f",Maintenance:"#ff9e40",Holiday:"#ffd166",Water:"#00b4d8",Done:"#06d6a0",Other:"#9b5de5"}[t]||"#9b5de5");
+function epSave(){try{localStorage.setItem(EP_KEY,JSON.stringify(EP));}catch(e){}}
+function hexA(hex,a){const n=hex.replace('#','');const r=parseInt(n.substr(0,2),16),g=parseInt(n.substr(2,2),16),b=parseInt(n.substr(4,2),16);return `rgba(${r},${g},${b},${a})`;}
+function pageData(){
+ const k=String(EP_PG);
+ if(!EP.pages[k]) EP.pages[k]={rows:[],events:{}};
+ const p=EP.pages[k];
+ if(!p.rows.length) p.rows.push({sx:0.13,sy:0.31,ex:0.93,ey:0.35,count:40,size:40,start:(EP_PG===0?"SG10484":"")});
+ return p;
+}
+function ringLabel(row,i){const m=(row.start||"").match(/^([A-Za-z]*)(\d+)$/); return m?m[1]+(parseInt(m[2],10)-i):"#"+(i+1);}
+
+EP_PAGES.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.label;$('epPage').appendChild(o);});
+
+function loadToolbar(){const r=pageData().rows[EP_ROW]; if(!r)return; $('epStart').value=r.start||""; $('epCount').value=r.count; $('epSize').value=r.size||40;}
+function renderRowsBar(){const p=pageData(); $('epRows').innerHTML=p.rows.map((r,i)=>`<button class="ep-rowchip${i===EP_ROW?' active':''}" data-row="${i}">แถว ${i+1}</button>`).join(' ');}
+function stagePx(){const st=$('epStage');return {w:st.clientWidth,h:st.clientHeight};}
+
+function render(){
+ const p=pageData(); const ov=$('epOv'); const {w,h}=stagePx(); ov.innerHTML="";
+ p.rows.forEach((r,ri)=>{
+   const x1=r.sx*w,y1=r.sy*h,x2=r.ex*w,y2=r.ey*h; const dx=x2-x1,dy=y2-y1;
+   const len=Math.hypot(dx,dy); const ang=Math.atan2(dy,dx)*180/Math.PI;
+   const n=Math.max(1,r.count); const spacing=n>1?len/(n-1):len;
+   const bw=Math.max(4,spacing*0.96); const bh=r.size||40; const ev=p.events;
+   for(let i=0;i<n;i++){
+     const t=n>1?i/(n-1):0; const cx=x1+dx*t, cy=y1+dy*t;
+     const b=document.createElement('div'); b.className='ep-box'; b.dataset.r=ri; b.dataset.i=i;
+     b.style.width=bw+'px'; b.style.height=bh+'px';
+     b.style.left=(cx-bw/2)+'px'; b.style.top=(cy-bh/2)+'px'; b.style.transform='rotate('+ang+'deg)';
+     const lbl=ringLabel(r,i); const e=ev[ri+'-'+i];
+     if(e){b.classList.add('has-ev'); const c=e.color||colorOf(e.type); b.style.backgroundColor=hexA(c,.62); b.style.borderColor=c;
+       b.style.backgroundImage='none';
+       b.title=lbl+' • ['+e.type+' · '+(e.seg||'RC')+'] '+(e.desc||'')+' '+(e.date||'');}
+     else b.title=lbl+' (คลิกเพื่อบันทึกเหตุการณ์)';
+     b.innerHTML='<span>'+lbl+'</span>'; ov.appendChild(b);
+     if(e&&e.seg==='Steel'){const mk=document.createElement('div'); mk.className='ep-smark'; mk.innerHTML='<div class="sb">S</div><div class="st"></div>'; mk.style.left=cx+'px'; mk.style.top=(cy-bh/2-2)+'px'; ov.appendChild(mk);}
+   }
+   if(ri===EP_ROW){
+     const line=document.createElement('div'); line.className='ep-line';
+     line.style.left=x1+'px'; line.style.top=y1+'px'; line.style.width=len+'px'; line.style.transform='rotate('+ang+'deg)'; ov.appendChild(line);
+     [['s',x1,y1],['e',x2,y2]].forEach(([wh,hx,hy])=>{const hd=document.createElement('div'); hd.className='ep-handle '+wh; hd.style.left=hx+'px'; hd.style.top=hy+'px'; hd.dataset.h=wh; ov.appendChild(hd);});
+   }
+ });
+ $('epMeta').textContent=EP_PAGES[EP_PG].label+' · '+p.rows.length+' แถว · '+Object.keys(p.events).length+' เหตุการณ์';
+ renderList();
+}
+function renderList(){
+ const p=pageData(); const keys=Object.keys(p.events);
+ $('epListCount').textContent=keys.length;
+ $('epList').innerHTML=keys.sort((a,b)=>{const A=a.split('-').map(Number),B=b.split('-').map(Number);return A[0]-B[0]||A[1]-B[1];}).map(k=>{
+   const a=k.split('-').map(Number); const ri=a[0],i=a[1]; const e=p.events[k]; const r=p.rows[ri]; if(!r)return '';
+   return `<tr><td>แถว ${ri+1}</td><td><span class="pill">${ringLabel(r,i)}</span> <span class="seg-tag ${e.seg==='Steel'?'steel':'rc'}">${e.seg||'RC'}</span></td>
+   <td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${e.color||colorOf(e.type)};margin-right:6px"></span>${e.type}</td>
+   <td>${e.desc||""}${e.pdf?" 📎":""}</td><td>${e.date||""}</td>
+   <td><button class="ep-btn small" data-edit="${k}">แก้ไข</button>${e.pdf?` <button class="ep-btn small" data-open="${k}">📎 PDF</button>`:""}</td></tr>`;}).join('')
+   || `<tr><td colspan="6" style="color:#5b7a8c;text-align:center;padding:16px">ยังไม่มีเหตุการณ์ — คลิกที่กล่องในแบบเพื่อเพิ่ม</td></tr>`;
+}
+function openModal(ri,i){
+ EP_EDIT=[ri,i]; const p=pageData(); const e=p.events[ri+'-'+i]||{}; const r=p.rows[ri];
+ $('epModalTitle').textContent='เหตุการณ์ที่กล่อง '+ringLabel(r,i)+'  (แถว '+(ri+1)+')';
+ $('epfType').value=e.type||"Segment"; $('epfSeg').value=e.seg||"RC"; $('epfDesc').value=e.desc||""; $('epfDate').value=e.date||""; $('epfPdf').value=""; $('epfPdfCur').textContent=e.pdf?("แนบอยู่: "+e.pdf):"ยังไม่มีไฟล์แนบ";
+ EP_PICK=e.color||colorOf($('epfType').value); renderColorPicker();
+ $('epfDelete').style.display=e.type?"inline-block":"none"; $('epModal').classList.add('show');
+}
+function closeModal(){$('epModal').classList.remove('show'); EP_EDIT=null;}
+function renderColorPicker(){$('epfColors').innerHTML=EP_COLORS.map(c=>`<div class="ep-color${c===EP_PICK?' sel':''}" data-c="${c}" style="background:${c}"></div>`).join('');}
+function loadPage(){const img=$('epImg'); img.onload=()=>render(); img.src=EP_PAGES[EP_PG].file; EP_ROW=0; loadToolbar(); renderRowsBar(); if(img.complete && img.naturalWidth) render();}
+
+$('epPage').onchange=e=>{EP_PG=+e.target.value; loadPage();};
+$('epApply').onclick=()=>{const r=pageData().rows[EP_ROW]; if(!r)return; r.start=$('epStart').value.trim(); r.count=Math.max(1,Math.min(300,parseInt($('epCount').value)||1)); r.size=+$('epSize').value; epSave(); render();};
+$('epSize').oninput=()=>{const r=pageData().rows[EP_ROW]; if(r){r.size=+$('epSize').value; render();}};
+$('epAddRow').onclick=()=>{const p=pageData(); p.rows.push({sx:0.13,sy:0.55,ex:0.93,ey:0.59,count:40,size:40,start:""}); EP_ROW=p.rows.length-1; epSave(); loadToolbar(); renderRowsBar(); render();};
+$('epDelRow').onclick=()=>{const p=pageData(); if(p.rows.length<=1){alert('ต้องมีอย่างน้อย 1 แถว');return;} if(confirm('ลบแถว '+(EP_ROW+1)+' ?')){p.rows.splice(EP_ROW,1); const ne={}; Object.keys(p.events).forEach(k=>{const a=k.split('-').map(Number); let r=a[0],i=a[1]; if(r===EP_ROW)return; if(r>EP_ROW)r--; ne[r+'-'+i]=p.events[k];}); p.events=ne; EP_ROW=0; epSave(); loadToolbar(); renderRowsBar(); render();}};
+$('epRows').onclick=e=>{const b=e.target.closest('[data-row]'); if(b){EP_ROW=+b.dataset.row; loadToolbar(); renderRowsBar(); render();}};
+$('epClear').onclick=()=>{const p=pageData(); if(confirm('ล้างเหตุการณ์ทั้งหมดของแผ่นนี้?')){p.events={}; epSave(); render();}};
+
+$('epOv').addEventListener('pointerdown',e=>{const hd=e.target.closest('.ep-handle'); if(hd){drag={which:hd.dataset.h}; e.preventDefault();}});
+window.addEventListener('pointermove',e=>{ if(!drag)return; const st=$('epStage'); const rect=st.getBoundingClientRect();
+ let fx=(e.clientX-rect.left)/rect.width, fy=(e.clientY-rect.top)/rect.height; fx=Math.max(0,Math.min(1,fx)); fy=Math.max(0,Math.min(1,fy));
+ const r=pageData().rows[EP_ROW]; if(!r)return; if(drag.which==='s'){r.sx=fx;r.sy=fy;}else{r.ex=fx;r.ey=fy;} render(); });
+window.addEventListener('pointerup',()=>{ if(drag){drag=null; epSave();} });
+$('epOv').addEventListener('click',e=>{const b=e.target.closest('.ep-box'); if(b) openModal(+b.dataset.r,+b.dataset.i);});
+
+$('epfColors').onclick=e=>{const d=e.target.closest('.ep-color'); if(d){EP_PICK=d.dataset.c; renderColorPicker();}};
+$('epfType').onchange=()=>{EP_PICK=colorOf($('epfType').value); renderColorPicker();};
+/* ---- บันทึกไฟล์ลงโฟลเดอร์ "2.Report Effect" (File System Access API) ---- */
+let DIR_HANDLE=null;
+function _idb(){return new Promise((res,rej)=>{const r=indexedDB.open('mwa9c',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbSet(k,v){const db=await _idb();return new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+async function idbGet(k){const db=await _idb();return new Promise((res)=>{const t=db.transaction('kv','readonly');const rq=t.objectStore('kv').get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(null);});}
+async function dirOK(hd,ask){if(!hd)return false;const opt={mode:'readwrite'};if((await hd.queryPermission(opt))==='granted')return true;if(ask&&(await hd.requestPermission(opt))==='granted')return true;return false;}
+function setDirStatus(){const el=$('epDirStatus'); if(el) el.textContent=DIR_HANDLE?('✅ เชื่อมต่อแล้ว: '+DIR_HANDLE.name):'ยังไม่ได้เชื่อมต่อโฟลเดอร์';}
+async function connectDir(){if(!window.showDirectoryPicker){alert('เบราว์เซอร์นี้ไม่รองรับการเขียนลงโฟลเดอร์โดยตรง\nกรุณาใช้ Google Chrome หรือ Microsoft Edge\n(ถ้าไม่เชื่อมต่อ ระบบจะดาวน์โหลดไฟล์ลงโฟลเดอร์ Downloads/2.Report Effect แทน)');return null;}
+ try{DIR_HANDLE=await window.showDirectoryPicker({mode:'readwrite',id:'mwa9c-effect'});await idbSet('dir',DIR_HANDLE);setDirStatus();return DIR_HANDLE;}catch(e){return null;}}
+async function getDir(ask){if(DIR_HANDLE&&await dirOK(DIR_HANDLE,ask))return DIR_HANDLE;const hd=await idbGet('dir');if(hd&&await dirOK(hd,ask)){DIR_HANDLE=hd;setDirStatus();return hd;}if(ask)return await connectDir();return null;}
+async function writeToDir(name,blob){const dh=await getDir(false);if(!dh)return false;const fh=await dh.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(blob);await w.close();return true;}
+function dlFallback(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='2.Report Effect/'+name;document.body.appendChild(a);a.click();a.remove();}
+function sanit(s){return s.replace(/[^\w.\-ก-๙]+/g,'_');}
+async function writeLog(){try{const dh=await getDir(false);if(dh){const blob=new Blob([JSON.stringify(EP,null,2)],{type:'application/json'});const fh=await dh.getFileHandle('effect_records.json',{create:true});const w=await fh.createWritable();await w.write(blob);await w.close();return true;}}catch(e){}return false;}
+$('epConnect').onclick=()=>connectDir();
+$('epExportAll').onclick=async()=>{
+ const data={erection:JSON.parse(localStorage.getItem('mwa9c_erection_img_v1')||'null'),
+   soil:JSON.parse(localStorage.getItem('mwa9c_soil_v1')||'null'),
+   vl:JSON.parse(localStorage.getItem('mwa9c_vl_v1')||'null'),
+   ss_cfg:JSON.parse(localStorage.getItem('mwa9c_ss_cfg_v1')||'null'),
+   exported:new Date().toISOString()};
+ const txt=JSON.stringify(data,null,2);
+ try{const dh=await getDir(true); if(dh){const fh=await dh.getFileHandle('appendix_data.json',{create:true}); const w=await fh.createWritable(); await w.write(new Blob([txt],{type:'application/json'})); await w.close(); alert('บันทึก appendix_data.json ลงโฟลเดอร์ 2.Report Effect แล้ว ✅'); return;}}catch(e){}
+ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'})); a.download='appendix_data.json'; document.body.appendChild(a); a.click(); a.remove();
+ alert('ดาวน์โหลด appendix_data.json แล้ว (โปรดนำไปไว้ในโฟลเดอร์ 2.Report Effect)');
+};
+(async()=>{const hd=await idbGet('dir');if(hd){DIR_HANDLE=hd;setDirStatus();}})();
+
+$('epfSave').onclick=async()=>{
+ if(!EP_EDIT)return;
+ const p=pageData(); const ri=EP_EDIT[0], i=EP_EDIT[1]; const r=p.rows[ri];
+ const prev=p.events[ri+'-'+i]||{};
+ const ev={type:$('epfType').value,seg:$('epfSeg').value,desc:$('epfDesc').value.trim(),date:$('epfDate').value.trim(),color:EP_PICK};
+ if(prev.pdf){ev.pdf=prev.pdf; ev.pdfFile=prev.pdfFile;}
+ const file=$('epfPdf').files[0];
+ if(file){
+   const outname=sanit(EP_PAGES[EP_PG].label+'_'+ringLabel(r,i))+'__'+sanit(file.name);
+   ev.pdf=file.name; ev.pdfFile=outname;
+   let ok=false; try{ok=await writeToDir(outname,file);}catch(e){ok=false;}
+   if(!ok){dlFallback(file,outname); alert('บันทึกไฟล์ลงโฟลเดอร์โดยตรงไม่ได้ — ดาวน์โหลดไฟล์ไว้ใน Downloads/2.Report Effect แทน');}
+ }
+ p.events[ri+'-'+i]=ev; epSave();
+ await writeLog();
+ closeModal(); render();
+};
+$('epfDelete').onclick=()=>{if(!EP_EDIT)return; const p=pageData(); delete p.events[EP_EDIT[0]+'-'+EP_EDIT[1]]; epSave(); closeModal(); render();};
+$('epfCancel').onclick=closeModal;
+$('epModal').onclick=e=>{if(e.target===$('epModal'))closeModal();};
+$('epList').onclick=async e=>{
+ const ed=e.target.closest('[data-edit]'); if(ed){const a=ed.dataset.edit.split('-').map(Number); openModal(a[0],a[1]); return;}
+ const op=e.target.closest('[data-open]'); if(op){const ev=pageData().events[op.dataset.open]; if(!ev||!ev.pdfFile){alert('ไม่พบไฟล์ที่บันทึก');return;}
+   try{const dh=await getDir(true); const fh=await dh.getFileHandle(ev.pdfFile); const fl=await fh.getFile(); window.open(URL.createObjectURL(fl),'_blank');}
+   catch(err){alert('เปิดไฟล์ไม่ได้ — โปรดเชื่อมต่อโฟลเดอร์ 2.Report Effect ก่อน');}}
+};
+$('epImportBtn').onclick=()=>$('epImport').click();
+$('epImport').onchange=e=>{const fl=e.target.files[0]; if(!fl)return; const rd=new FileReader(); rd.onload=()=>{try{EP=JSON.parse(rd.result); epSave(); loadPage(); alert('นำเข้าข้อมูลสำเร็จ');}catch(err){alert('ไฟล์ไม่ถูกต้อง');}}; rd.readAsText(fl);};
+$('epExport').onclick=()=>{const blob=new Blob([JSON.stringify(EP,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='MWA_9C_erection_events.json'; a.click();};
+let _rsz; window.addEventListener('resize',()=>{clearTimeout(_rsz); _rsz=setTimeout(render,120);});
+
+loadPage();
+
+/* ================= SOIL PROFILE OVERLAY ================= */
+const SP_PAGES=[
+ {file:"soil_page1.jpg",label:"STA. 0+000 – 1+750"},
+ {file:"soil_page2.jpg",label:"STA. 1+750 – 3+600"},
+ {file:"soil_page3.jpg",label:"STA. 3+600 – 5+250"},
+ {file:"soil_page4.jpg",label:"STA. 5+250 – 7+000"},
+ {file:"soil_page5.jpg",label:"STA. 7+000 – 8+750"},
+ {file:"soil_page6.jpg",label:"STA. 8+750 – 10+500"},
+ {file:"soil_page7.jpg",label:"STA. 10+500 – 12+250"},
+ {file:"soil_page8.jpg",label:"STA. 12+250 – 14+000"},
+ {file:"soil_page9.jpg",label:"STA. 14+000 – สิ้นสุด"}
+];
+const SP_KEY="mwa9c_soil_v1";
+let SP={pages:{}}; try{const s=localStorage.getItem(SP_KEY); if(s)SP=JSON.parse(s);}catch(e){}
+let SP_PG=0, sdrag=null;
+const SP_DEF=[[0,18],[1750,19],[3600,17],[5250,18],[7000,18],[8750,18],[10500,18],[12250,18],[14000,18]];
+function spData(){const k=String(SP_PG); if(!SP.pages[k]){const d=SP_DEF[SP_PG]||[0,18]; SP.pages[k]={sx:0.05,sy:0.60,ex:0.96,ey:0.60,count:d[1],size:46,km:d[0],soils:{}};} return SP.pages[k];}
+function spSave(){try{localStorage.setItem(SP_KEY,JSON.stringify(SP));}catch(e){}}
+function spFmt(m){const km=Math.floor(m/1000);const r=Math.round(m-km*1000);return km+'+'+String(r).padStart(3,'0');}
+SP_PAGES.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.label;$('spPage').appendChild(o);});
+function spToolbar(){const d=spData(); $('spKm').value=d.km; $('spCount').value=d.count; $('spSize').value=d.size||46;}
+function spPx(){const st=$('spStage');return {w:st.clientWidth,h:st.clientHeight};}
+function spRender(){
+ const d=spData(); const ov=$('spOv'); const {w,h}=spPx(); ov.innerHTML="";
+ const x1=d.sx*w,y1=d.sy*h,x2=d.ex*w,y2=d.ey*h; const dx=x2-x1,dy=y2-y1;
+ const len=Math.hypot(dx,dy); const ang=Math.atan2(dy,dx)*180/Math.PI;
+ const n=Math.max(1,d.count); const spacing=n>1?len/(n-1):len; const bw=Math.max(4,spacing*0.98); const bh=d.size||46;
+ let clay=0,sand=0;
+ for(let i=0;i<n;i++){
+   const t=n>1?i/(n-1):0; const cx=x1+dx*t, cy=y1+dy*t;
+   const b=document.createElement('div'); b.className='sp-box'; b.dataset.i=i;
+   b.style.width=bw+'px'; b.style.height=bh+'px'; b.style.left=(cx-bw/2)+'px'; b.style.top=(cy-bh/2)+'px'; b.style.transform='rotate('+ang+'deg)';
+   const s=d.soils[i]; if(s){b.classList.add(s); if(s==='clay')clay++; else sand++;}
+   const a=(d.km||0)+i*100, e2=(d.km||0)+(i+1)*100;
+   b.title='ช่วง '+spFmt(a)+' – '+spFmt(e2)+' : '+(s?(s==='clay'?'CLAY (ดินเหนียว)':'SAND (ทราย)'):'ยังไม่ระบุ (คลิกเพื่อกำหนด)');
+   ov.appendChild(b);
+ }
+ const line=document.createElement('div'); line.className='ep-line'; line.style.left=x1+'px'; line.style.top=y1+'px'; line.style.width=len+'px'; line.style.transform='rotate('+ang+'deg)'; ov.appendChild(line);
+ [['s',x1,y1],['e',x2,y2]].forEach(function(a){var wh=a[0],hx=a[1],hy=a[2];var hd=document.createElement('div'); hd.className='ep-handle '+wh; hd.style.left=hx+'px'; hd.style.top=hy+'px'; hd.dataset.h=wh; ov.appendChild(hd);});
+ $('spMeta').textContent=SP_PAGES[SP_PG].label+' · '+n+' ช่วง · CLAY '+clay+' · SAND '+sand;
+}
+function spLoad(){const img=$('spImg'); img.onload=()=>spRender(); img.src=SP_PAGES[SP_PG].file; spToolbar(); if(img.complete&&img.naturalWidth)spRender();}
+$('spPage').onchange=e=>{SP_PG=+e.target.value; spLoad();};
+$('spApply').onclick=()=>{const d=spData(); d.km=Number($('spKm').value)||0; d.count=Math.max(1,Math.min(60,parseInt($('spCount').value)||1)); d.size=+$('spSize').value; spSave(); spRender();};
+$('spSize').oninput=()=>{const d=spData(); d.size=+$('spSize').value; spRender();};
+$('spClear').onclick=()=>{const d=spData(); if(confirm('ล้างการไฮไลต์ดินของแผ่นนี้?')){d.soils={}; spSave(); spRender();}};
+$('spOv').addEventListener('pointerdown',e=>{const hd=e.target.closest('.ep-handle'); if(hd){sdrag={which:hd.dataset.h}; e.preventDefault();}});
+window.addEventListener('pointermove',e=>{ if(!sdrag)return; const st=$('spStage'); const rect=st.getBoundingClientRect(); let fx=(e.clientX-rect.left)/rect.width, fy=(e.clientY-rect.top)/rect.height; fx=Math.max(0,Math.min(1,fx)); fy=Math.max(0,Math.min(1,fy)); const d=spData(); if(sdrag.which==='s'){d.sx=fx;d.sy=fy;}else{d.ex=fx;d.ey=fy;} spRender(); });
+window.addEventListener('pointerup',()=>{ if(sdrag){sdrag=null; spSave();} });
+$('spOv').addEventListener('click',e=>{const b=e.target.closest('.sp-box'); if(!b)return; const d=spData(); const i=+b.dataset.i; const cur=d.soils[i]; if(!cur)d.soils[i]='clay'; else if(cur==='clay')d.soils[i]='sand'; else delete d.soils[i]; spSave(); spRender();});
+$('spImportBtn').onclick=()=>$('spImport').click();
+$('spImport').onchange=e=>{const fl=e.target.files[0]; if(!fl)return; const rd=new FileReader(); rd.onload=()=>{try{SP=JSON.parse(rd.result); spSave(); spLoad(); alert('นำเข้าสำเร็จ');}catch(err){alert('ไฟล์ไม่ถูกต้อง');}}; rd.readAsText(fl);};
+$('spExport').onclick=()=>{const blob=new Blob([JSON.stringify(SP,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='MWA_9C_soil_highlight.json'; a.click();};
+let _sprz; window.addEventListener('resize',()=>{clearTimeout(_sprz); _sprz=setTimeout(spRender,120);});
+spLoad();
+
+/* ================= SURFACE SETTLEMENT / VOLUME LOSS ================= */
+const VL_DATA=[
+ {no:1,span:"9C-1 → 9C-2",ch:"0+025",vl:"0.29"},
+ {no:2,span:"9C-1 → 9C-2",ch:"0+300",vl:""},
+ {no:3,span:"9C-1 → 9C-2",ch:"0+825",vl:""},
+ {no:4,span:"9C-1 → 9C-2",ch:"1+025",vl:""},
+ {no:5,span:"9C-1 → 9C-2",ch:"1+475",vl:""},
+ {no:6,span:"9C-1 → 9C-2",ch:"1+850",vl:"0.59"},
+ {no:7,span:"9C-1 → 9C-2",ch:"2+050",vl:"0.49"},
+ {no:8,span:"9C-1 → 9C-2",ch:"2+250",vl:"1.82"},
+ {no:9,span:"9C-2 → 9C-3",ch:"2+320",vl:"0.46"},
+ {no:10,span:"9C-2 → 9C-3",ch:"2+350",vl:"0.65"},
+ {no:11,span:"9C-2 → 9C-3",ch:"2+450",vl:"0.32"},
+ {no:12,span:"9C-2 → 9C-3",ch:"2+675",vl:""},
+ {no:13,span:"9C-2 → 9C-3",ch:"3+125",vl:"0.21"},
+ {no:14,span:"9C-2 → 9C-3",ch:"3+725",vl:""},
+ {no:15,span:"9C-2 → 9C-3",ch:"4+150",vl:""},
+ {no:16,span:"9C-2 → 9C-3",ch:"4+450",vl:""},
+ {no:17,span:"9C-2 → 9C-3",ch:"4+875",vl:""},
+ {no:18,span:"9C-3 → 9C-4",ch:"4+950",vl:""},
+ {no:19,span:"9C-4 → 9C-5",ch:"5+025",vl:""},
+ {no:20,span:"9C-4 → 9C-5",ch:"5+500",vl:""},
+ {no:21,span:"9C-4 → 9C-5",ch:"6+000",vl:""},
+ {no:22,span:"9C-4 → 9C-5",ch:"6+525",vl:"0.91"},
+ {no:23,span:"9C-4 → 9C-5",ch:"6+975",vl:""},
+ {no:24,span:"9C-4 → 9C-5",ch:"7+200",vl:"0.47"},
+ {no:25,span:"9C-5 → 9C-6",ch:"7+275",vl:""},
+ {no:26,span:"9C-5 → 9C-6",ch:"7+300",vl:""},
+ {no:27,span:"9C-6 → 9C-7",ch:"7+375",vl:"0.2"},
+ {no:28,span:"9C-6 → 9C-7",ch:"7+800",vl:""},
+ {no:29,span:"9C-6 → 9C-7",ch:"8+350",vl:""},
+ {no:30,span:"9C-6 → 9C-7",ch:"8+675",vl:""},
+ {no:31,span:"9C-6 → 9C-7",ch:"9+550",vl:""},
+ {no:32,span:"9C-6 → 9C-7",ch:"10+075",vl:""},
+ {no:33,span:"9C-6 → 9C-7",ch:"10+225",vl:"4.58"},
+ {no:34,span:"9C-7 → 9C-8",ch:"10+275",vl:"0.47"},
+ {no:35,span:"9C-7 → 9C-8",ch:"10+775",vl:"0.43"},
+ {no:36,span:"9C-7 → 9C-8",ch:"11+250",vl:""},
+ {no:37,span:"9C-7 → 9C-8",ch:"11+750",vl:"0.42"},
+ {no:38,span:"9C-7 → 9C-8",ch:"12+600",vl:""},
+ {no:39,span:"9C-8 → 9C-9",ch:"12+650",vl:""},
+ {no:40,span:"9C-9 → 9C-10",ch:"12+700",vl:""},
+ {no:41,span:"9C-9 → 9C-10",ch:"13+250",vl:""},
+ {no:42,span:"9C-9 → 9C-10",ch:"13+700",vl:""},
+ {no:43,span:"9C-9 → 9C-10",ch:"14+200",vl:"0.54"},
+ {no:44,span:"9C-9 → 9C-10",ch:"14+700",vl:"0.4"},
+ {no:45,span:"9C-9 → 9C-10",ch:"15+250",vl:""},
+ {no:46,span:"9C-9 → 9C-10",ch:"15+700",vl:"1.93"}
+];
+const SS_PAGES=[
+ {file:"inst_page1.jpg",label:"Instrument 9C — หน้า 1/29"},
+ {file:"inst_page2.jpg",label:"Instrument 9C — หน้า 2/29"},
+ {file:"inst_page3.jpg",label:"Instrument 9C — หน้า 3/29"},
+ {file:"inst_page4.jpg",label:"Instrument 9C — หน้า 4/29"},
+ {file:"inst_page5.jpg",label:"Instrument 9C — หน้า 5/29"},
+ {file:"inst_page6.jpg",label:"Instrument 9C — หน้า 6/29"},
+ {file:"inst_page7.jpg",label:"Instrument 9C — หน้า 7/29"},
+ {file:"inst_page8.jpg",label:"Instrument 9C — หน้า 8/29"},
+ {file:"inst_page9.jpg",label:"Instrument 9C — หน้า 9/29"},
+ {file:"inst_page10.jpg",label:"Instrument 9C — หน้า 10/29"},
+ {file:"inst_page11.jpg",label:"Instrument 9C — หน้า 11/29"},
+ {file:"inst_page12.jpg",label:"Instrument 9C — หน้า 12/29"},
+ {file:"inst_page13.jpg",label:"Instrument 9C — หน้า 13/29"},
+ {file:"inst_page14.jpg",label:"Instrument 9C — หน้า 14/29"},
+ {file:"inst_page15.jpg",label:"Instrument 9C — หน้า 15/29"},
+ {file:"inst_page16.jpg",label:"Instrument 9C — หน้า 16/29"},
+ {file:"inst_page17.jpg",label:"Instrument 9C — หน้า 17/29"},
+ {file:"inst_page18.jpg",label:"Instrument 9C — หน้า 18/29"},
+ {file:"inst_page19.jpg",label:"Instrument 9C — หน้า 19/29"},
+ {file:"inst_page20.jpg",label:"Instrument 9C — หน้า 20/29"},
+ {file:"inst_page21.jpg",label:"Instrument 9C — หน้า 21/29"},
+ {file:"inst_page22.jpg",label:"Instrument 9C — หน้า 22/29"},
+ {file:"inst_page23.jpg",label:"Instrument 9C — หน้า 23/29"},
+ {file:"inst_page24.jpg",label:"Instrument 9C — หน้า 24/29"},
+ {file:"inst_page25.jpg",label:"Instrument 9C — หน้า 25/29"},
+ {file:"inst_page26.jpg",label:"Instrument 9C — หน้า 26/29"},
+ {file:"inst_page27.jpg",label:"Instrument 9C — หน้า 27/29"},
+ {file:"inst_page28.jpg",label:"Instrument 9C — หน้า 28/29"},
+ {file:"inst_page29.jpg",label:"Instrument 9C — หน้า 29/29"}
+];
+const SS_KEY="mwa9c_vl_v1";
+const SS_CFG_KEY="mwa9c_ss_cfg_v1";
+const SPAN=525;
+let SS={}; try{const s=localStorage.getItem(SS_KEY); if(s)SS=JSON.parse(s);}catch(e){}
+let SSC={}; try{const s=localStorage.getItem(SS_CFG_KEY); if(s)SSC=JSON.parse(s);}catch(e){}
+let SS_PG=0, ssdrag=null;
+function ssSave(){try{localStorage.setItem(SS_KEY,JSON.stringify(SS));}catch(e){}}
+function sscSave(){try{localStorage.setItem(SS_CFG_KEY,JSON.stringify(SSC));}catch(e){}}
+function ssParse(s){const m=String(s).match(/(\d+)\+(\d+)/); return m?parseInt(m[1],10)*1000+parseInt(m[2],10):(parseFloat(s)||0);}
+function ssFmt(m){m=Math.round(m); const km=Math.floor(m/1000); return km+'+'+String(m-km*1000).padStart(3,'0');}
+function sscFor(i){ if(!SSC[i]) SSC[i]={a:i*SPAN,b:(i+1)*SPAN,sx:0.05,sy:0.5,ex:0.95,ey:0.5}; return SSC[i]; }
+function curVL(d){const ov=SS[d.no]||{}; return ov.vl!==undefined?ov.vl:d.vl;}
+function ssVlColor(v){const n=parseFloat(v); if(isNaN(n))return '#7a93a3'; if(n>1.0)return '#e3001b'; if(n>0.5)return '#cc8800'; return '#06a37a';}
+function ssVlClass(v){const n=parseFloat(v); if(isNaN(n))return ''; if(n>1.0)return 'vl-hi'; if(n>0.5)return 'vl-mid'; return 'vl-ok';}
+function ssLabelText(i){const c=sscFor(i); return 'Instrument 9C - กม. '+ssFmt(c.a)+' ถึง '+ssFmt(c.b);}
+SS_PAGES.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=ssLabelText(i);$('ssPage').appendChild(o);});
+function ssToolbar(){const c=sscFor(SS_PG); $('ssKmA').value=ssFmt(c.a); $('ssKmB').value=ssFmt(c.b);}
+function ssPx(){const st=$('ssStage');return {w:st.clientWidth,h:st.clientHeight};}
+const SS_XL=0.06, SS_XR=0.96;
+function ssOverlay(){
+ const c=sscFor(SS_PG); const ov=$('ssOv'); if(!ov)return; const {w,h}=ssPx(); ov.innerHTML="";
+ if(!c.pts)c.pts={}; const lo=Math.min(c.a,c.b), hi=Math.max(c.a,c.b); const Y0=(c.y0!==undefined?c.y0:0.5); let k=0;
+ VL_DATA.forEach(d=>{const m=ssParse(d.ch); if(m<lo-1||m>hi+1)return;
+   const t=(c.b===c.a)?0:(m-c.a)/(c.b-c.a);
+   const p=c.pts[d.no]||{x:SS_XL+(SS_XR-SS_XL)*t, y:Y0};
+   const px=p.x*w, py=p.y*h; const vl=curVL(d); const col=ssVlColor(vl);
+   const el=document.createElement('div'); el.className='ss-pt'+(k%2?' alt':''); k++; el.dataset.no=d.no;
+   el.style.left=px+'px'; el.style.top=py+'px'; el.style.color=col;
+   el.innerHTML='<div class="ss-lb">CH. '+d.ch+', VL = '+(vl===''||vl===undefined?'-':vl)+'%</div><div class="ss-dot"></div>';
+   ov.appendChild(el);
+ });
+}
+function ssRow(d){
+ const ov=SS[d.no]||{};
+ const vl=(ov.vl!==undefined?ov.vl:d.vl); const st=(ov.settle!==undefined?ov.settle:''); const dt=(ov.date!==undefined?ov.date:''); const nt=(ov.note!==undefined?ov.note:'');
+ return `<tr>
+  <td><span class="pill">A${d.no}</span></td>
+  <td>${d.span}</td>
+  <td>${d.ch}</td>
+  <td class="${ssVlClass(vl)}"><input class="ss-in ss-vl" type="number" step="0.01" data-arr="${d.no}" data-fld="vl" value="${vl}"></td>
+  <td><input class="ss-in" type="text" data-arr="${d.no}" data-fld="settle" value="${st}" placeholder="—"></td>
+  <td><input class="ss-in" type="text" data-arr="${d.no}" data-fld="date" value="${dt}" placeholder="ว/ด/ป"></td>
+  <td><input class="ss-in" type="text" data-arr="${d.no}" data-fld="note" value="${nt}" placeholder="—"></td>
+ </tr>`;
+}
+function ssMeta(){let filled=0,mx=0; VL_DATA.forEach(d=>{const v=parseFloat(curVL(d)); if(!isNaN(v)){filled++; if(v>mx)mx=v;}}); $('ssMeta').textContent='จุดวัดทั้งหมด '+VL_DATA.length+' ตำแหน่ง · มีค่า %VL '+filled+' · สูงสุด '+(mx?mx.toFixed(2)+'%':'-');}
+function ssRender(){ $('ssBody').innerHTML=VL_DATA.map(ssRow).join(''); ssMeta(); }
+function ssLoad(){const img=$('ssImg'); img.onload=()=>ssOverlay(); img.src=SS_PAGES[SS_PG].file; ssToolbar(); if(img.complete&&img.naturalWidth)ssOverlay();}
+$('ssPage').onchange=e=>{SS_PG=+e.target.value; ssLoad();};
+$('ssApply').onclick=()=>{const c=sscFor(SS_PG); c.a=ssParse($('ssKmA').value); c.b=ssParse($('ssKmB').value); sscSave(); $('ssPage').children[SS_PG].textContent=ssLabelText(SS_PG); ssOverlay();};
+$('ssBody').addEventListener('input',e=>{const el=e.target.closest('.ss-in'); if(!el)return; const a=el.dataset.arr, fld=el.dataset.fld; if(!SS[a])SS[a]={}; SS[a][fld]=el.value; ssSave(); if(fld==='vl'){const td=el.closest('td'); td.className=ssVlClass(el.value); ssMeta(); ssOverlay();}});
+$('ssReset').onclick=()=>{ if(confirm('รีเซ็ตค่าทั้งหมดกลับเป็นค่าจาก Excel? (ค่าที่แก้ไว้จะหายไป)')){ SS={}; ssSave(); ssRender(); ssOverlay(); } };
+$('ssExport').onclick=()=>{const out=VL_DATA.map(d=>{const ov=SS[d.no]||{};return {array:'A'+d.no,span:d.span,chainage:d.ch,vl:curVL(d),settlement_mm:ov.settle||'',date:ov.date||'',note:ov.note||''};}); const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='MWA_9C_volume_loss.json'; a.click();};
+$('ssImportBtn').onclick=()=>$('ssImport').click();
+$('ssImport').onchange=e=>{const fl=e.target.files[0]; if(!fl)return; const rd=new FileReader(); rd.onload=()=>{try{const arr=JSON.parse(rd.result); const map={}; arr.forEach(x=>{const no=String(x.array).replace(/[^0-9]/g,''); map[no]={vl:x.vl,settle:x.settlement_mm,date:x.date,note:x.note};}); SS=map; ssSave(); ssRender(); ssOverlay(); alert('นำเข้าสำเร็จ');}catch(err){alert('ไฟล์ไม่ถูกต้อง');}}; rd.readAsText(fl);};
+$('ssSaveDir').onclick=async()=>{const out=VL_DATA.map(d=>{const ov=SS[d.no]||{};return {array:'A'+d.no,span:d.span,chainage:d.ch,vl:curVL(d),settlement_mm:ov.settle||'',date:ov.date||'',note:ov.note||''};});
+ try{const dh=await getDir(true); if(!dh)return; const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}); const fh=await dh.getFileHandle('surface_settlement_volume_loss.json',{create:true}); const w=await fh.createWritable(); await w.write(blob); await w.close(); alert('บันทึกลงโฟลเดอร์ 2.Report Effect แล้ว: surface_settlement_volume_loss.json');}
+ catch(err){alert('บันทึกลงโฟลเดอร์ไม่ได้ — โปรดเชื่อมต่อโฟลเดอร์ 2.Report Effect ก่อน (ปุ่มในส่วน Erection Plan)');}};
+$('ssOv').addEventListener('pointerdown',e=>{const el=e.target.closest('.ss-pt'); if(el){ssdrag={no:el.dataset.no}; e.preventDefault();}});
+window.addEventListener('pointermove',e=>{ if(!ssdrag)return; const st=$('ssStage'); const r=st.getBoundingClientRect(); let fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height; fx=Math.max(0,Math.min(1,fx)); fy=Math.max(0,Math.min(1,fy)); const c=sscFor(SS_PG); if(!c.pts)c.pts={}; c.pts[ssdrag.no]={x:fx,y:fy}; ssOverlay(); });
+window.addEventListener('pointerup',()=>{ if(ssdrag){ssdrag=null; sscSave();} });
+$('ssAuto').onclick=()=>{const c=sscFor(SS_PG); c.pts={}; sscSave(); ssOverlay();};
+let _ssrz; window.addEventListener('resize',()=>{clearTimeout(_ssrz); _ssrz=setTimeout(ssOverlay,120);});
+ssLoad(); ssRender();
+
+
+/* ================= ONLINE REALTIME SYNC (Supabase) ================= */
+/* ====== ตั้งค่าตรงนี้: วาง URL และ anon key จาก Supabase ====== */
+const _CFG = (window.MWA_CONFIG || {});  /* ตั้งค่าในไฟล์ config.js (แยกไว้ไม่ให้หายตอนอัปเดต) */
+const SUPA_URL = _CFG.SUPA_URL || "";
+const SUPA_KEY = _CFG.SUPA_KEY || "";
+const ROOM     = _CFG.ROOM     || "9C";
+/* ============================================================ */
+const SYNC_KEYS=[
+  ['mwa9c_erection_img_v1', ()=>EP,  v=>{EP=v||{pages:{}};  try{loadToolbar();renderRowsBar();render();}catch(e){}}],
+  ['mwa9c_soil_v1',         ()=>SP,  v=>{SP=v||{pages:{}};  try{spToolbar();spRender();}catch(e){}}],
+  ['mwa9c_vl_v1',           ()=>SS,  v=>{SS=v||{};          try{ssRender();ssOverlay();}catch(e){}}],
+  ['mwa9c_ss_cfg_v1',       ()=>SSC, v=>{SSC=v||{};         try{for(let i=0;i<SS_PAGES.length;i++){if($('ssPage').children[i])$('ssPage').children[i].textContent=ssLabelText(i);}ssToolbar();ssOverlay();}catch(e){}}],
+  ['mwa9c_routes_v1',       ()=>RT,  v=>{RT=v||{};           try{renderRoutes();}catch(e){}}],
+];
+function _applyRemote(k,v){
+  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
+  const row=SYNC_KEYS.find(r=>r[0]===k); if(row) row[2](v);
+}
+let __push=()=>{}; let __cid=Math.random().toString(36).slice(2);
+(function initSync(){
+  if(!SUPA_URL || !SUPA_KEY || !window.supabase) return;
+  let sb; try{ sb=supabase.createClient(SUPA_URL,SUPA_KEY); }catch(e){ console.warn('supabase init failed',e); return; }
+  __push=(k,v)=>{ try{ sb.from('app_state').upsert({room:ROOM,k:k,v:v,client:__cid,updated_at:new Date().toISOString()}); }catch(e){} };
+  // pull existing shared state, then apply
+  sb.from('app_state').select('k,v').eq('room',ROOM).then(({data,error})=>{
+    if(error){ console.warn('sync pull error',error); return; }
+    if(data){ data.forEach(r=>_applyRemote(r.k, r.v)); }
+    const b=document.getElementById('syncStatus'); if(b) b.textContent='🟢 ออนไลน์ (เชื่อมต่อข้อมูลร่วม)';
+  });
+  // realtime subscribe
+  sb.channel('rt_'+ROOM)
+    .on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:'room=eq.'+ROOM}, p=>{
+      const row=p.new; if(!row || row.client===__cid) return; _applyRemote(row.k, row.v);
+    }).subscribe();
+})();
+let _syncT={}; function _pushDebounced(k,getter){ clearTimeout(_syncT[k]); _syncT[k]=setTimeout(()=>__push(k,getter()),400); }
+// wrap save functions to also push to cloud
+try{ const _e=epSave;  epSave  = function(){_e();  _pushDebounced('mwa9c_erection_img_v1',()=>EP);}; }catch(e){}
+try{ const _s=spSave;  spSave  = function(){_s();  _pushDebounced('mwa9c_soil_v1',()=>SP);}; }catch(e){}
+try{ const _v=ssSave;  ssSave  = function(){_v();  _pushDebounced('mwa9c_vl_v1',()=>SS);}; }catch(e){}
+try{ const _c=sscSave; sscSave = function(){_c(); _pushDebounced('mwa9c_ss_cfg_v1',()=>SSC);}; }catch(e){}
+try{ const _rt=saveRoutes; saveRoutes = function(){_rt(); _pushDebounced('mwa9c_routes_v1',()=>RT);}; }catch(e){}
+
+
+/* ===== Edit Lock — รหัสปลดล็อกการแก้ไข ===== */
+const EDIT_CODE=(window.MWA_CONFIG&&window.MWA_CONFIG.EDIT_CODE)||"";
+let LOCKED=false;
+function setLock(lk){
+ LOCKED=lk; document.body.classList.toggle('app-locked',lk);
+ ['epApply','epAddRow','epDelRow','epClear','epImportBtn','spApply','spClear','spImportBtn','ssApply','ssAuto','ssReset','ssImportBtn'].forEach(id=>{const el=document.getElementById(id); if(el)el.disabled=lk;});
+ const lb=document.getElementById('lockBtn'); if(lb) lb.textContent= lk?'🔒 อ่านอย่างเดียว — กดเพื่อปลดล็อกแก้ไข':'🔓 แก้ไขได้ — กดเพื่อล็อก';
+}
+(function initLock(){
+ const lb=document.getElementById('lockBtn'); if(!lb) return;
+ if(!EDIT_CODE){ lb.style.display='none'; setLock(false); return; }
+ lb.style.display=''; setLock(sessionStorage.getItem('mwa9c_unlocked')!=='1');
+ lb.onclick=()=>{
+   if(LOCKED){ const c=prompt('ใส่รหัสเพื่อแก้ไขข้อมูล:'); if(c==null)return; if(c===EDIT_CODE){ sessionStorage.setItem('mwa9c_unlocked','1'); setLock(false);} else alert('รหัสไม่ถูกต้อง'); }
+   else { sessionStorage.removeItem('mwa9c_unlocked'); setLock(true); }
+ };
+})();
+/* กันการบันทึก/ลบในหน้าต่างเหตุการณ์ระหว่างล็อก */
+(function(){const sv=document.getElementById('epfSave'); if(sv){const o=sv.onclick; sv.onclick=function(e){ if(LOCKED){alert('🔒 โหมดอ่านอย่างเดียว — กดปลดล็อกก่อนแก้ไข');return;} return o&&o.call(this,e);};}
+ const dl=document.getElementById('epfDelete'); if(dl){const o=dl.onclick; dl.onclick=function(e){ if(LOCKED){alert('🔒 โหมดอ่านอย่างเดียว');return;} return o&&o.call(this,e);};}})();
+</script>
+</body>
+</html>
